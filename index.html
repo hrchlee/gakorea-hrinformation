@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GA KOREA 인사정보등록 (Firebase)</title>
+    <title>GA KOREA 인사정보등록</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Malgun Gothic', sans-serif; background: #f5f6f8; font-size: 12px; }
@@ -11,7 +11,6 @@
         .login-box { background: white; padding: 50px; border-radius: 10px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); width: 450px; }
         .login-header { text-align: center; margin-bottom: 40px; }
         .login-header h1 { color: #333; font-size: 28px; margin-bottom: 10px; }
-        .login-header p { color: #666; font-size: 14px; }
         .firebase-badge { background: #ff9800; color: white; padding: 4px 12px; border-radius: 12px; font-size: 11px; display: inline-block; margin-top: 10px; }
         .login-form .form-group { margin-bottom: 20px; }
         .login-form label { display: block; margin-bottom: 8px; color: #333; font-weight: bold; }
@@ -30,40 +29,40 @@
         .layout { display: flex; height: calc(100vh - 120px); }
         .sidebar { width: 250px; background: white; border-right: 1px solid #e0e0e0; padding: 20px; overflow-y: auto; }
         .main-content { flex: 1; background: white; overflow-y: auto; padding: 25px; }
-        .filter-section { margin-bottom: 25px; }
-        .filter-section h3 { font-size: 13px; margin-bottom: 12px; font-weight: bold; }
+        .filter-section { margin-bottom: 20px; }
+        .filter-section h3 { font-size: 13px; margin-bottom: 10px; font-weight: bold; }
         .filter-group { margin-bottom: 12px; }
         .filter-group label { display: block; margin-bottom: 6px; font-size: 12px; color: #666; }
         .filter-group input, .filter-group select { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 3px; font-size: 12px; }
-        .radio-group { display: flex; gap: 15px; margin-top: 8px; }
-        .employee-list { border-top: 1px solid #e0e0e0; margin-top: 15px; padding-top: 15px; }
-        .employee-item { padding: 10px; border: 1px solid #e0e0e0; border-radius: 4px; margin-bottom: 8px; cursor: pointer; transition: all 0.2s; }
+        .employee-list { border-top: 1px solid #e0e0e0; margin-top: 15px; padding-top: 15px; max-height: 400px; overflow-y: auto; }
+        .employee-item { padding: 10px; border: 1px solid #e0e0e0; border-radius: 4px; margin-bottom: 8px; cursor: pointer; }
         .employee-item:hover { background: #f5f9ff; border-color: #1976d2; }
-        .employee-item .name { font-weight: bold; color: #333; margin-bottom: 4px; }
+        .employee-item .name { font-weight: bold; margin-bottom: 4px; }
         .employee-item .info { font-size: 11px; color: #666; }
-        .btn { padding: 10px 25px; border: none; border-radius: 4px; font-size: 13px; cursor: pointer; font-weight: 600; }
+        .btn { padding: 10px 20px; border: none; border-radius: 4px; font-size: 13px; cursor: pointer; font-weight: 600; }
         .btn-primary { background: #1976d2; color: white; }
         .btn-secondary { background: #757575; color: white; }
         .btn-outline { background: white; border: 1px solid #ddd; color: #666; }
-        .form-table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
+        .form-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
         .form-table tr { border-bottom: 1px solid #f0f0f0; }
-        .form-table th { width: 150px; padding: 12px; text-align: left; background: #fafafa; color: #333; font-weight: 600; font-size: 12px; border-right: 1px solid #e0e0e0; vertical-align: top; }
-        .form-table td { padding: 12px; }
-        .form-table input, .form-table select, .form-table textarea { width: 100%; padding: 8px 10px; border: 1px solid #ddd; border-radius: 3px; font-size: 12px; }
-        .form-table textarea { min-height: 80px; resize: vertical; font-family: inherit; }
+        .form-table th { width: 150px; padding: 10px; text-align: left; background: #fafafa; font-weight: 600; font-size: 12px; border-right: 1px solid #e0e0e0; }
+        .form-table td { padding: 10px; }
+        .form-table input, .form-table select, .form-table textarea { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 3px; font-size: 12px; }
+        .form-table textarea { min-height: 60px; font-family: inherit; }
         .required::after { content: ' *'; color: #f44336; }
-        .detail-tabs { display: flex; gap: 2px; border-bottom: 1px solid #e0e0e0; margin-bottom: 25px; }
-        .detail-tab { padding: 10px 20px; background: #f5f5f5; border: none; border-top-left-radius: 4px; border-top-right-radius: 4px; cursor: pointer; font-size: 13px; color: #666; }
-        .detail-tab.active { background: white; color: #1976d2; font-weight: bold; }
+        .detail-tabs { display: flex; gap: 2px; border-bottom: 1px solid #e0e0e0; margin-bottom: 20px; }
+        .detail-tab { padding: 10px 20px; background: #f5f5f5; border: none; border-radius: 4px 4px 0 0; cursor: pointer; font-size: 13px; color: #666; }
+        .detail-tab.active { background: white; color: #1976d2; font-weight: bold; border-bottom: 2px solid white; margin-bottom: -1px; }
         .detail-content { display: none; }
         .detail-content.active { display: block; }
         .empty-state { text-align: center; padding: 60px 20px; color: #999; }
-        .button-group { display: flex; gap: 10px; justify-content: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0; }
-        .form-title { font-size: 16px; color: #1976d2; margin-bottom: 15px; font-weight: bold; padding-bottom: 10px; border-bottom: 2px solid #1976d2; }
+        .button-group { display: flex; gap: 10px; justify-content: center; margin-top: 20px; padding-top: 20px; border-top: 1px solid #e0e0e0; }
+        .form-title { font-size: 14px; color: #1976d2; margin: 20px 0 10px 0; font-weight: bold; padding-bottom: 8px; border-bottom: 2px solid #1976d2; }
         .loading { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 9999; }
         .loading.active { display: flex; }
         .spinner { border: 4px solid #f3f3f3; border-top: 4px solid #1976d2; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .radio-group { display: flex; gap: 10px; }
     </style>
 </head>
 <body>
@@ -74,17 +73,17 @@
             <div class="login-header">
                 <h1>🏢 그룹 인사관리 시스템</h1>
                 <p>관리자 로그인</p>
-                <span class="firebase-badge">🔥 Firebase 클라우드 버전</span>
+                <span class="firebase-badge">🔥 Firebase</span>
             </div>
-            <div class="error-msg" id="login-error">아이디 또는 비밀번호가 올바르지 않습니다.</div>
+            <div class="error-msg" id="login-error">로그인 실패</div>
             <form class="login-form" id="login-form">
                 <div class="form-group">
                     <label>아이디</label>
-                    <input type="text" id="login-username" required value="admin">
+                    <input type="text" id="login-username" value="admin" required>
                 </div>
                 <div class="form-group">
                     <label>비밀번호</label>
-                    <input type="password" id="login-password" required value="admin1234">
+                    <input type="password" id="login-password" value="admin1234" required>
                 </div>
                 <button type="submit" class="login-btn">로그인</button>
             </form>
@@ -93,32 +92,28 @@
 
     <div id="main-screen" class="main-screen">
         <div class="header">
-            <div class="header-left"><h1>GA KOREA 인사정보등록 <span style="font-size: 12px; color: #ff9800;">☁️ Cloud</span></h1></div>
+            <div class="header-left"><h1>GA KOREA 인사정보등록</h1></div>
             <div class="header-right">
-                <div class="user-info"><strong id="current-user"></strong> | <span id="current-role"></span></div>
+                <div class="user-info"><strong id="current-user"></strong></div>
                 <button class="logout-btn" onclick="logout()">로그아웃</button>
             </div>
         </div>
 
         <div class="tab-menu">
             <button class="tab-btn active" onclick="switchMainTab('employee')">직원 관리</button>
+            <button class="tab-btn" onclick="switchMainTab('roster')">임직원 명부</button>
+            <button class="tab-btn" onclick="switchMainTab('company')">법인 관리</button>
         </div>
 
         <div id="employee-tab" class="layout">
             <div class="sidebar">
                 <div class="filter-section">
                     <h3>검색</h3>
-                    <div class="filter-group">
-                        <input type="text" id="search-employee" placeholder="이름/사번..." oninput="filterEmployees()">
-                    </div>
+                    <input type="text" id="search-employee" placeholder="이름/사번..." oninput="filterEmployees()">
                 </div>
                 <div class="filter-section">
-                    <div class="filter-group">
-                        <label>법인</label>
-                        <select id="filter-company" onchange="filterEmployees()">
-                            <option value="">전체</option>
-                        </select>
-                    </div>
+                    <h3>법인</h3>
+                    <select id="filter-company" onchange="filterEmployees()"></select>
                 </div>
                 <div class="employee-list" id="employee-list">
                     <div class="empty-state"><p>직원이 없습니다</p></div>
@@ -130,459 +125,929 @@
                 <div class="empty-state"><h3>직원을 선택하거나 신규 등록하세요</h3></div>
             </div>
         </div>
+
+        <!-- 임직원 명부 탭 -->
+        <div id="roster-tab" class="layout" style="display: none;">
+            <div class="main-content" style="padding: 30px;">
+                <h2 style="margin-bottom: 20px;">임직원 명부</h2>
+                
+                <div style="margin-bottom: 20px; display: flex; gap: 10px; align-items: center;">
+                    <select id="roster-company-filter" onchange="loadRoster()" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                        <option value="">전체 법인</option>
+                    </select>
+                    <select id="roster-dept-filter" onchange="loadRoster()" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                        <option value="">전체 부서</option>
+                    </select>
+                    <button class="btn btn-primary" onclick="exportRoster()">📊 Excel 내보내기</button>
+                </div>
+
+                <div style="overflow-x: auto;">
+                    <table id="roster-table" style="width: 100%; border-collapse: collapse; background: white; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                        <thead style="background: #f5f5f5;">
+                            <tr>
+                                <th style="padding: 12px; border: 1px solid #ddd; font-size: 12px;">No</th>
+                                <th style="padding: 12px; border: 1px solid #ddd; font-size: 12px;">사번</th>
+                                <th style="padding: 12px; border: 1px solid #ddd; font-size: 12px;">성명</th>
+                                <th style="padding: 12px; border: 1px solid #ddd; font-size: 12px;">법인</th>
+                                <th style="padding: 12px; border: 1px solid #ddd; font-size: 12px;">부서</th>
+                                <th style="padding: 12px; border: 1px solid #ddd; font-size: 12px;">직급</th>
+                                <th style="padding: 12px; border: 1px solid #ddd; font-size: 12px;">입사일</th>
+                                <th style="padding: 12px; border: 1px solid #ddd; font-size: 12px;">재직상태</th>
+                                <th style="padding: 12px; border: 1px solid #ddd; font-size: 12px;">휴대전화</th>
+                                <th style="padding: 12px; border: 1px solid #ddd; font-size: 12px;">이메일</th>
+                            </tr>
+                        </thead>
+                        <tbody id="roster-tbody">
+                            <tr>
+                                <td colspan="10" style="padding: 40px; text-align: center; color: #999;">데이터가 없습니다</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- 법인 관리 탭 -->
+        <div id="company-tab" class="layout" style="display: none;">
+            <div class="main-content" style="padding: 30px;">
+                <h2 style="margin-bottom: 20px;">법인 관리</h2>
+                
+                <div style="margin-bottom: 30px;">
+                    <button class="btn btn-primary" onclick="showAddCompanyForm()">+ 법인 추가</button>
+                </div>
+
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px;" id="company-list">
+                    <div style="text-align: center; padding: 40px; color: #999;">법인 목록을 불러오는 중...</div>
+                </div>
+
+                <!-- 부서 관리 섹션 -->
+                <h2 style="margin: 40px 0 20px 0;">부서 관리</h2>
+                
+                <div style="margin-bottom: 30px;">
+                    <button class="btn btn-primary" onclick="showAddDeptForm()">+ 부서 추가</button>
+                </div>
+
+                <div style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; background: white;">
+                        <thead style="background: #f5f5f5;">
+                            <tr>
+                                <th style="padding: 12px; border: 1px solid #ddd;">부서코드</th>
+                                <th style="padding: 12px; border: 1px solid #ddd;">부서명</th>
+                                <th style="padding: 12px; border: 1px solid #ddd;">소속 법인</th>
+                                <th style="padding: 12px; border: 1px solid #ddd;">관리</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dept-list">
+                            <tr>
+                                <td colspan="4" style="padding: 20px; text-align: center; color: #999;">부서 목록을 불러오는 중...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getFirestore, collection, getDocs, doc, setDoc, deleteDoc, getDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCrsPO00nsUH4iwUfHCF1aFKwcuoedqTTs",
+            authDomain: "ga-korea-hr.firebaseapp.com",
+            projectId: "ga-korea-hr",
+            storageBucket: "ga-korea-hr.firebasestorage.app",
+            messagingSenderId: "1022770625476",
+            appId: "1:1022770625476:web:927f6a18be08feb5518291"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        
+        window.db = db;
+        window.collection = collection;
+        window.getDocs = getDocs;
+        window.doc = doc;
+        window.setDoc = setDoc;
+        window.deleteDoc = deleteDoc;
+        window.getDoc = getDoc;
+        window.serverTimestamp = serverTimestamp;
+        
+        console.log('✅ Firebase 초기화');
+    </script>
 
     <script>
-    // ⭐ Firebase 설정 정보 ⭐
-    const firebaseConfig = {
-        apiKey: "AIzaSyCrsPO00nsUH4iwUfHCF1aFKwcuoedqTTs",
-        authDomain: "ga-korea-hr.firebaseapp.com",
-        projectId: "ga-korea-hr",
-        storageBucket: "ga-korea-hr.firebasestorage.app",
-        messagingSenderId: "1022770625476",
-        appId: "1:1022770625476:web:927f6a18be08feb5518291",
-        measurementId: "G-H49VLF0C7W"
-    };
+        function showLoading() { document.getElementById('loading').classList.add('active'); }
+        function hideLoading() { document.getElementById('loading').classList.remove('active'); }
 
-    // Firebase 초기화
-    let db;
-    try {
-        firebase.initializeApp(firebaseConfig);
-        db = firebase.firestore();
-        console.log('✅ Firebase 연결 성공');
-    } catch (error) {
-        console.error('❌ Firebase 연결 실패:', error);
-        alert('Firebase 설정을 확인해주세요. FIREBASE_GUIDE.md를 참고하세요.');
-    }
-
-    function showLoading() { document.getElementById('loading').classList.add('active'); }
-    function hideLoading() { document.getElementById('loading').classList.remove('active'); }
-
-    function hashPassword(password) {
-        let hash = 0;
-        for (let i = 0; i < password.length; i++) {
-            const char = password.charCodeAt(i);
-            hash = ((hash << 5) - hash) + char;
-            hash = hash & hash;
+        function hashPassword(password) {
+            let hash = 0;
+            for (let i = 0; i < password.length; i++) {
+                hash = ((hash << 5) - hash) + password.charCodeAt(i);
+                hash = hash & hash;
+            }
+            return hash.toString();
         }
-        return hash.toString();
-    }
 
-    let session = null;
+        let session = null;
+        let allEmployees = [];
 
-    async function initializeData() {
-        try {
-            // 기본 법인 데이터
-            const companiesSnapshot = await db.collection('companies').get();
-            if (companiesSnapshot.empty) {
-                const companies = [
-                    { code: 'C001', name: 'GA KOREA', businessNumber: '123-45-67890', ceo: '김대표' },
-                    { code: 'C002', name: '㈜지에이테크', businessNumber: '234-56-78901', ceo: '이사장' },
-                    { code: 'C003', name: '㈜지에이산업', businessNumber: '345-67-89012', ceo: '박회장' }
-                ];
-                for (const company of companies) {
-                    await db.collection('companies').doc(company.code).set(company);
-                }
-                console.log('기본 법인 데이터 생성 완료');
-            }
-
-            // 기본 부서 데이터
-            const deptsSnapshot = await db.collection('departments').get();
-            if (deptsSnapshot.empty) {
-                const departments = [
-                    { code: 'D001', name: '경영지원팀', companyCode: 'C001' },
-                    { code: 'D002', name: '인사팀', companyCode: 'C001' },
-                    { code: 'D003', name: '재무팀', companyCode: 'C001' },
-                    { code: 'D004', name: '영업팀', companyCode: 'C001' }
-                ];
-                for (const dept of departments) {
-                    await db.collection('departments').doc(dept.code).set(dept);
-                }
-                console.log('기본 부서 데이터 생성 완료');
-            }
-
-            // 기본 사용자
-            const usersSnapshot = await db.collection('users').get();
-            if (usersSnapshot.empty) {
-                await db.collection('users').doc('admin').set({
-                    username: 'admin',
-                    password: hashPassword('admin1234'),
-                    name: '시스템관리자',
-                    role: 'admin',
-                    active: true
-                });
-                console.log('기본 사용자 생성 완료');
-            }
-        } catch (error) {
-            console.error('초기화 오류:', error);
-        }
-    }
-
-    window.addEventListener('DOMContentLoaded', async function() {
-        showLoading();
-        await initializeData();
-        hideLoading();
-        
-        document.getElementById('login-form').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            showLoading();
-            
-            const username = document.getElementById('login-username').value;
-            const password = document.getElementById('login-password').value;
-            const hashedPassword = hashPassword(password);
-            
+        async function initializeData() {
             try {
-                const userDoc = await db.collection('users').doc(username).get();
-                if (userDoc.exists) {
-                    const user = userDoc.data();
-                    if (user.password === hashedPassword && user.active) {
-                        session = user;
-                        showMainScreen();
+                const companiesRef = window.collection(window.db, 'companies');
+                const snap = await window.getDocs(companiesRef);
+                
+                if (snap.empty) {
+                    await window.setDoc(window.doc(window.db, 'companies', 'C001'), { code: 'C001', name: 'GA KOREA' });
+                    await window.setDoc(window.doc(window.db, 'companies', 'C002'), { code: 'C002', name: '㈜지에이테크' });
+                    await window.setDoc(window.doc(window.db, 'departments', 'D001'), { code: 'D001', name: '경영지원팀', companyCode: 'C001' });
+                    await window.setDoc(window.doc(window.db, 'departments', 'D002'), { code: 'D002', name: '인사팀', companyCode: 'C001' });
+                }
+
+                const usersRef = window.collection(window.db, 'users');
+                const uSnap = await window.getDocs(usersRef);
+                
+                if (uSnap.empty) {
+                    await window.setDoc(window.doc(window.db, 'users', 'admin'), {
+                        username: 'admin',
+                        password: hashPassword('admin1234'),
+                        name: '시스템관리자',
+                        role: 'admin',
+                        active: true
+                    });
+                }
+            } catch (error) {
+                console.error('초기화 오류:', error);
+            }
+        }
+
+        window.addEventListener('DOMContentLoaded', async function() {
+            showLoading();
+            await initializeData();
+            hideLoading();
+            
+            document.getElementById('login-form').addEventListener('submit', async function(e) {
+                e.preventDefault();
+                showLoading();
+                
+                try {
+                    const username = document.getElementById('login-username').value;
+                    const password = document.getElementById('login-password').value;
+                    
+                    const userRef = window.doc(window.db, 'users', username);
+                    const userSnap = await window.getDoc(userRef);
+                    
+                    if (userSnap.exists()) {
+                        const user = userSnap.data();
+                        if (user.password === hashPassword(password) && user.active) {
+                            session = user;
+                            await showMainScreen();
+                        } else {
+                            document.getElementById('login-error').style.display = 'block';
+                            setTimeout(() => { document.getElementById('login-error').style.display = 'none'; }, 3000);
+                        }
                     } else {
                         document.getElementById('login-error').style.display = 'block';
                         setTimeout(() => { document.getElementById('login-error').style.display = 'none'; }, 3000);
                     }
-                } else {
-                    document.getElementById('login-error').style.display = 'block';
-                    setTimeout(() => { document.getElementById('login-error').style.display = 'none'; }, 3000);
+                } catch (error) {
+                    console.error('로그인 오류:', error);
+                    alert('로그인 오류: ' + error.message);
                 }
-            } catch (error) {
-                console.error('로그인 오류:', error);
-                alert('로그인 중 오류가 발생했습니다.');
-            }
+                
+                hideLoading();
+            });
+        });
+
+        async function showMainScreen() {
+            document.getElementById('login-screen').style.display = 'none';
+            document.getElementById('main-screen').classList.add('active');
+            document.getElementById('current-user').textContent = session.name;
             
-            hideLoading();
-        });
-    });
-
-    async function showMainScreen() {
-        document.getElementById('login-screen').style.display = 'none';
-        document.getElementById('main-screen').classList.add('active');
-        document.getElementById('current-user').textContent = session.name;
-        document.getElementById('current-role').textContent = session.role === 'admin' ? '시스템 관리자' : '일반 관리자';
-        
-        await loadCompanyFilters();
-        await loadEmployees();
-    }
-
-    function logout() {
-        if (confirm('로그아웃 하시겠습니까?')) {
-            session = null;
-            document.getElementById('login-screen').style.display = 'flex';
-            document.getElementById('main-screen').classList.remove('active');
-            document.getElementById('login-form').reset();
+            await loadCompanyFilters();
+            await loadEmployees();
         }
-    }
 
-    function switchMainTab(tabName) {
-        // 현재는 직원 관리만 있음
-    }
+        function logout() {
+            if (confirm('로그아웃 하시겠습니까?')) {
+                location.reload();
+            }
+        }
 
-    async function loadCompanyFilters() {
-        const filterSelect = document.getElementById('filter-company');
-        filterSelect.innerHTML = '<option value="">전체</option>';
-        
-        const snapshot = await db.collection('companies').get();
-        snapshot.forEach(doc => {
-            const company = doc.data();
-            const option = document.createElement('option');
-            option.value = company.code;
-            option.textContent = company.name;
-            filterSelect.appendChild(option);
-        });
-    }
+        window.switchMainTab = function(tabName) {
+            // 탭 버튼 활성화
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            // 탭 콘텐츠 표시
+            document.getElementById('employee-tab').style.display = 'none';
+            document.getElementById('roster-tab').style.display = 'none';
+            document.getElementById('company-tab').style.display = 'none';
+            
+            if (tabName === 'employee') {
+                document.getElementById('employee-tab').style.display = 'flex';
+            } else if (tabName === 'roster') {
+                document.getElementById('roster-tab').style.display = 'flex';
+                loadRoster();
+            } else if (tabName === 'company') {
+                document.getElementById('company-tab').style.display = 'flex';
+                loadCompanyManagement();
+            }
+        }
 
-    let allEmployees = [];
+        async function loadCompanyFilters() {
+            const select = document.getElementById('filter-company');
+            select.innerHTML = '<option value="">전체</option>';
+            
+            const snapshot = await window.getDocs(window.collection(window.db, 'companies'));
+            snapshot.forEach(doc => {
+                const c = doc.data();
+                select.innerHTML += `<option value="${c.code}">${c.name}</option>`;
+            });
+        }
 
-    async function loadEmployees() {
-        showLoading();
-        try {
+        async function loadEmployees() {
+            showLoading();
             allEmployees = [];
-            const snapshot = await db.collection('employees').get();
+            const snapshot = await window.getDocs(window.collection(window.db, 'employees'));
             snapshot.forEach(doc => {
                 allEmployees.push({ id: doc.id, ...doc.data() });
             });
             filterEmployees();
-        } catch (error) {
-            console.error('직원 조회 오류:', error);
+            hideLoading();
         }
-        hideLoading();
-    }
 
-    function filterEmployees() {
-        const searchTerm = document.getElementById('search-employee').value.toLowerCase();
-        const companyFilter = document.getElementById('filter-company').value;
-        
-        let filtered = allEmployees;
-        
-        if (searchTerm) {
-            filtered = filtered.filter(emp => 
-                (emp.name && emp.name.toLowerCase().includes(searchTerm)) ||
-                (emp.employeeId && emp.employeeId.toLowerCase().includes(searchTerm))
-            );
+        function filterEmployees() {
+            const search = document.getElementById('search-employee').value.toLowerCase();
+            const company = document.getElementById('filter-company').value;
+            
+            let filtered = allEmployees.filter(emp => {
+                const matchSearch = !search || (emp.name && emp.name.toLowerCase().includes(search)) || (emp.employeeId && emp.employeeId.includes(search));
+                const matchCompany = !company || emp.companyCode === company;
+                return matchSearch && matchCompany;
+            });
+            
+            renderEmployeeList(filtered);
         }
-        
-        if (companyFilter) {
-            filtered = filtered.filter(emp => emp.companyCode === companyFilter);
+
+        function renderEmployeeList(employees) {
+            const list = document.getElementById('employee-list');
+            if (employees.length === 0) {
+                list.innerHTML = '<div class="empty-state"><p>직원이 없습니다</p></div>';
+                return;
+            }
+            
+            list.innerHTML = employees.map(emp => `
+                <div class="employee-item" onclick="selectEmployee('${emp.employeeId}')">
+                    <div class="name">${emp.name}</div>
+                    <div class="info">${emp.employeeId}</div>
+                </div>
+            `).join('');
         }
-        
-        renderEmployeeList(filtered);
-    }
 
-    async function renderEmployeeList(employees) {
-        const listContainer = document.getElementById('employee-list');
-        
-        if (employees.length === 0) {
-            listContainer.innerHTML = '<div class="empty-state"><p>직원이 없습니다</p></div>';
-            return;
+        function selectEmployee(id) {
+            const emp = allEmployees.find(e => e.employeeId === id);
+            if (!emp) return;
+            
+            document.getElementById('employee-detail').innerHTML = `
+                <h2>${emp.name} (${emp.employeeId})</h2>
+                <p>법인: ${emp.companyCode} | 부서: ${emp.departmentCode || '-'}</p>
+                <p>직급: ${emp.position || '-'} | 입사일: ${emp.hireDate || '-'}</p>
+                <div class="button-group">
+                    <button class="btn btn-primary" onclick="editEmployee('${id}')">수정</button>
+                    <button class="btn btn-secondary" onclick="deleteEmployee('${id}')">삭제</button>
+                </div>
+            `;
         }
-        
-        const companiesSnapshot = await db.collection('companies').get();
-        const companies = {};
-        companiesSnapshot.forEach(doc => {
-            const c = doc.data();
-            companies[c.code] = c.name;
-        });
-        
-        listContainer.innerHTML = employees.map(emp => `
-            <div class="employee-item" onclick="selectEmployee('${emp.employeeId}')">
-                <div class="name">${emp.name}</div>
-                <div class="info">${emp.employeeId || '-'} | ${companies[emp.companyCode] || '-'}</div>
-            </div>
-        `).join('');
-    }
 
-    let currentEmployeeId = null;
-
-    function selectEmployee(employeeId) {
-        currentEmployeeId = employeeId;
-        const employee = allEmployees.find(emp => emp.employeeId === employeeId);
-        if (!employee) return;
-        
-        const detailContainer = document.getElementById('employee-detail');
-        detailContainer.innerHTML = `
-            <h2>${employee.name} (${employee.employeeId})</h2>
-            <p>법인: ${employee.companyCode} | 부서: ${employee.departmentCode || '-'}</p>
-            <p>직급: ${employee.position || '-'} | 재직상태: ${employee.workStatus || '-'}</p>
-            <div class="button-group">
-                <button class="btn btn-primary" onclick="editEmployee('${employeeId}')">수정</button>
-                <button class="btn btn-secondary" onclick="deleteEmployee('${employeeId}')">삭제</button>
-            </div>
-        `;
-    }
-
-    async function deleteEmployee(employeeId) {
-        if (!confirm('정말 삭제하시겠습니까?')) return;
-        
-        showLoading();
-        try {
-            await db.collection('employees').doc(employeeId).delete();
+        async function deleteEmployee(id) {
+            if (!confirm('삭제하시겠습니까?')) return;
+            showLoading();
+            await window.deleteDoc(window.doc(window.db, 'employees', id));
             alert('삭제되었습니다.');
             await loadEmployees();
             document.getElementById('employee-detail').innerHTML = '<div class="empty-state"><h3>직원을 선택하거나 신규 등록하세요</h3></div>';
-        } catch (error) {
-            console.error('삭제 오류:', error);
-            alert('삭제 중 오류가 발생했습니다.');
+            hideLoading();
         }
-        hideLoading();
-    }
 
-    function editEmployee(employeeId) {
-        currentEmployeeId = employeeId;
-        const employee = allEmployees.find(emp => emp.employeeId === employeeId);
-        if (!employee) return;
-        showEmployeeForm(employee);
-    }
-
-    function showNewEmployeeForm() {
-        currentEmployeeId = null;
-        showEmployeeForm();
-    }
-
-    async function showEmployeeForm(employee = null) {
-        const isNew = !employee;
-        
-        // 법인과 부서 데이터 불러오기
-        const companiesSnapshot = await db.collection('companies').get();
-        const departmentsSnapshot = await db.collection('departments').get();
-        
-        const companies = [];
-        companiesSnapshot.forEach(doc => companies.push(doc.data()));
-        
-        const departments = [];
-        departmentsSnapshot.forEach(doc => departments.push(doc.data()));
-        
-        // 사번 자동 생성
-        function generateEmployeeId() {
-            const year = new Date().getFullYear().toString().slice(2);
-            const month = (new Date().getMonth() + 1).toString().padStart(2, '0');
-            const random = Math.floor(Math.random() * 9000 + 1000);
-            return year + month + random;
+        function editEmployee(id) {
+            const emp = allEmployees.find(e => e.employeeId === id);
+            showEmployeeForm(emp);
         }
-        
-        const detailContainer = document.getElementById('employee-detail');
-        detailContainer.innerHTML = `
-            <h2>${isNew ? '신규 직원 등록' : '직원 정보 수정'}</h2>
-            
-            <form id="employee-form" onsubmit="saveEmployee(event)">
-                <div class="detail-tabs">
-                    <button type="button" class="detail-tab active" onclick="switchFormTab(event, 'basic')">기본정보</button>
-                    <button type="button" class="detail-tab" onclick="switchFormTab(event, 'employment')">재직정보</button>
-                </div>
-                
-                <div id="form-basic" class="detail-content active">
-                    <div class="form-title">기본정보</div>
-                    <table class="form-table">
-                        <tr>
-                            <th class="required">사번</th>
-                            <td><input type="text" name="employeeId" value="${employee ? employee.employeeId : generateEmployeeId()}" ${!isNew ? 'readonly' : ''} required></td>
-                            <th class="required">성명</th>
-                            <td><input type="text" name="name" value="${employee?.name || ''}" required></td>
-                        </tr>
-                        <tr>
-                            <th>성명(영문)</th>
-                            <td><input type="text" name="nameEn" value="${employee?.nameEn || ''}"></td>
-                            <th class="required">성별</th>
-                            <td>
-                                <select name="gender" required>
-                                    <option value="M" ${employee?.gender === 'M' ? 'selected' : ''}>남성</option>
-                                    <option value="F" ${employee?.gender === 'F' ? 'selected' : ''}>여성</option>
-                                </select>
-                            </td>
-                        </tr>
-                        <tr>
-                            <th class="required">생년월일</th>
-                            <td><input type="date" name="birthDate" value="${employee?.birthDate || ''}" required></td>
-                            <th class="required">휴대전화</th>
-                            <td><input type="tel" name="mobile" value="${employee?.mobile || ''}" required></td>
-                        </tr>
-                        <tr>
-                            <th>주소</th>
-                            <td colspan="3"><input type="text" name="address" value="${employee?.address || ''}"></td>
-                        </tr>
-                        <tr>
-                            <th>이메일</th>
-                            <td><input type="email" name="companyEmail" value="${employee?.companyEmail || ''}"></td>
-                            <th>주민등록번호</th>
-                            <td><input type="text" name="residentNumber" value="${employee?.residentNumber || ''}"></td>
-                        </tr>
-                    </table>
-                </div>
-                
-                <div id="form-employment" class="detail-content">
-                    <div class="form-title">재직정보</div>
-                    <table class="form-table">
-                        <tr>
-                            <th class="required">입사일</th>
-                            <td><input type="date" name="hireDate" value="${employee?.hireDate || ''}" required></td>
-                            <th class="required">재직상태</th>
-                            <td>
-                                <select name="workStatus" required>
-                                    <option value="재직" ${!employee || employee.workStatus === '재직' ? 'selected' : ''}>재직</option>
-                                    <option value="휴직" ${employee?.workStatus === '휴직' ? 'selected' : ''}>휴직</option>
-                                    <option value="퇴직" ${employee?.workStatus === '퇴직' ? 'selected' : ''}>퇴직</option>
-                                </select>
-                            </td>
-                        </tr>
-                        <tr>
-                            <th class="required">법인</th>
-                            <td>
-                                <select name="companyCode" required>
-                                    <option value="">선택</option>
-                                    ${companies.map(c => `<option value="${c.code}" ${employee?.companyCode === c.code ? 'selected' : ''}>${c.name}</option>`).join('')}
-                                </select>
-                            </td>
-                            <th class="required">부서</th>
-                            <td>
-                                <select name="departmentCode" required>
-                                    <option value="">선택</option>
-                                    ${departments.map(d => `<option value="${d.code}" ${employee?.departmentCode === d.code ? 'selected' : ''}>${d.name}</option>`).join('')}
-                                </select>
-                            </td>
-                        </tr>
-                        <tr>
-                            <th class="required">고용형태</th>
-                            <td>
-                                <select name="employmentType" required>
-                                    <option value="">선택</option>
-                                    <option value="정규직" ${employee?.employmentType === '정규직' ? 'selected' : ''}>정규직</option>
-                                    <option value="계약직" ${employee?.employmentType === '계약직' ? 'selected' : ''}>계약직</option>
-                                </select>
-                            </td>
-                            <th class="required">직급</th>
-                            <td>
-                                <select name="position" required>
-                                    <option value="">선택</option>
-                                    <option value="사원" ${employee?.position === '사원' ? 'selected' : ''}>사원</option>
-                                    <option value="대리" ${employee?.position === '대리' ? 'selected' : ''}>대리</option>
-                                    <option value="과장" ${employee?.position === '과장' ? 'selected' : ''}>과장</option>
-                                    <option value="부장" ${employee?.position === '부장' ? 'selected' : ''}>부장</option>
-                                </select>
-                            </td>
-                        </tr>
-                    </table>
-                </div>
-                
-                <div class="button-group">
-                    <button type="submit" class="btn btn-primary">💾 저장 (Firebase)</button>
-                    <button type="button" class="btn btn-outline" onclick="cancelForm()">취소</button>
-                </div>
-            </form>
-        `;
-    }
 
-    function switchFormTab(event, tabName) {
-        document.querySelectorAll('.detail-tab').forEach(tab => tab.classList.remove('active'));
-        document.querySelectorAll('.detail-content').forEach(content => content.classList.remove('active'));
-        
-        event.target.classList.add('active');
-        document.getElementById('form-' + tabName).classList.add('active');
-    }
+        window.showNewEmployeeForm = function() {
+            showEmployeeForm();
+        }
 
-    async function saveEmployee(event) {
-        event.preventDefault();
-        showLoading();
-        
-        try {
-            const formData = new FormData(event.target);
-            const employeeData = {};
+        function generateId() {
+            return new Date().getFullYear().toString().slice(2) + 
+                   (new Date().getMonth() + 1).toString().padStart(2, '0') + 
+                   Math.floor(Math.random() * 9000 + 1000);
+        }
+
+        async function showEmployeeForm(emp = null) {
+            const companies = [];
+            const depts = [];
             
-            for (let [key, value] of formData.entries()) {
-                employeeData[key] = value;
+            const cSnap = await window.getDocs(window.collection(window.db, 'companies'));
+            cSnap.forEach(doc => companies.push(doc.data()));
+            
+            const dSnap = await window.getDocs(window.collection(window.db, 'departments'));
+            dSnap.forEach(doc => depts.push(doc.data()));
+            
+            document.getElementById('employee-detail').innerHTML = `
+                <h2>${emp ? '직원 정보 수정' : '신규 직원 등록'}</h2>
+                <form id="emp-form" onsubmit="saveEmployee(event)">
+                    <div class="detail-tabs">
+                        <button type="button" class="detail-tab active" onclick="switchTab(event, 'personal')">인적정보</button>
+                        <button type="button" class="detail-tab" onclick="switchTab(event, 'employment')">재직정보</button>
+                        <button type="button" class="detail-tab" onclick="switchTab(event, 'salary')">급여정보</button>
+                        <button type="button" class="detail-tab" onclick="switchTab(event, 'attendance')">근태정보</button>
+                    </div>
+                    
+                    <div id="tab-personal" class="detail-content active">
+                        <div class="form-title">기본정보</div>
+                        <table class="form-table">
+                            <tr>
+                                <th class="required">사번</th>
+                                <td><input name="employeeId" value="${emp?.employeeId || generateId()}" ${emp ? 'readonly' : ''} required></td>
+                                <th>영문 사번</th>
+                                <td><input name="employeeIdEn" value="${emp?.employeeIdEn || ''}"></td>
+                            </tr>
+                            <tr>
+                                <th class="required">성명</th>
+                                <td><input name="name" value="${emp?.name || ''}" required></td>
+                                <th>영문명</th>
+                                <td><input name="nameEn" value="${emp?.nameEn || ''}"></td>
+                            </tr>
+                            <tr>
+                                <th class="required">내/외국인</th>
+                                <td>
+                                    <div class="radio-group">
+                                        <label><input type="radio" name="nationality" value="내국인" ${!emp || emp.nationality === '내국인' ? 'checked' : ''}> 내국인</label>
+                                        <label><input type="radio" name="nationality" value="외국인" ${emp?.nationality === '외국인' ? 'checked' : ''}> 외국인</label>
+                                    </div>
+                                </td>
+                                <th class="required">성별</th>
+                                <td>
+                                    <select name="gender" required>
+                                        <option value="남성" ${!emp || emp.gender === '남성' ? 'selected' : ''}>남성</option>
+                                        <option value="여성" ${emp?.gender === '여성' ? 'selected' : ''}>여성</option>
+                                    </select>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th class="required">생년월일</th>
+                                <td><input type="date" name="birthDate" value="${emp?.birthDate || ''}" required></td>
+                                <th>주민등록번호</th>
+                                <td><input name="residentNumber" value="${emp?.residentNumber || ''}" placeholder="000000-0000000"></td>
+                            </tr>
+                            <tr>
+                                <th class="required">휴대전화</th>
+                                <td><input name="mobile" value="${emp?.mobile || ''}" placeholder="010-0000-0000" required></td>
+                                <th>전화번호</th>
+                                <td><input name="phone" value="${emp?.phone || ''}" placeholder="02-0000-0000"></td>
+                            </tr>
+                            <tr>
+                                <th>주소</th>
+                                <td colspan="3"><input name="address" value="${emp?.address || ''}"></td>
+                            </tr>
+                            <tr>
+                                <th>이메일(회사)</th>
+                                <td><input type="email" name="companyEmail" value="${emp?.companyEmail || ''}"></td>
+                                <th>이메일(개인)</th>
+                                <td><input type="email" name="personalEmail" value="${emp?.personalEmail || ''}"></td>
+                            </tr>
+                        </table>
+                        
+                        <div class="form-title">은행정보</div>
+                        <table class="form-table">
+                            <tr>
+                                <th>은행명</th>
+                                <td><input name="bankName" value="${emp?.bankName || ''}"></td>
+                                <th>계좌번호</th>
+                                <td><input name="accountNumber" value="${emp?.accountNumber || ''}"></td>
+                            </tr>
+                            <tr>
+                                <th>예금주</th>
+                                <td colspan="3"><input name="accountHolder" value="${emp?.accountHolder || ''}"></td>
+                            </tr>
+                        </table>
+                        
+                        <div class="form-title">학력정보</div>
+                        <table class="form-table">
+                            <tr>
+                                <th>최종학력</th>
+                                <td>
+                                    <select name="education">
+                                        <option value="">선택</option>
+                                        <option value="고졸" ${emp?.education === '고졸' ? 'selected' : ''}>고졸</option>
+                                        <option value="전문대졸" ${emp?.education === '전문대졸' ? 'selected' : ''}>전문대졸</option>
+                                        <option value="대졸" ${emp?.education === '대졸' ? 'selected' : ''}>대졸</option>
+                                        <option value="대학원졸" ${emp?.education === '대학원졸' ? 'selected' : ''}>대학원졸</option>
+                                    </select>
+                                </td>
+                                <th>학교명</th>
+                                <td><input name="schoolName" value="${emp?.schoolName || ''}"></td>
+                            </tr>
+                            <tr>
+                                <th>전공</th>
+                                <td><input name="major" value="${emp?.major || ''}"></td>
+                                <th>졸업일</th>
+                                <td><input type="date" name="graduationDate" value="${emp?.graduationDate || ''}"></td>
+                            </tr>
+                        </table>
+                        
+                        <div class="form-title">가족사항</div>
+                        <table class="form-table">
+                            <tr>
+                                <th>결혼여부</th>
+                                <td>
+                                    <div class="radio-group">
+                                        <label><input type="radio" name="maritalStatus" value="미혼" ${!emp || emp.maritalStatus === '미혼' ? 'checked' : ''}> 미혼</label>
+                                        <label><input type="radio" name="maritalStatus" value="기혼" ${emp?.maritalStatus === '기혼' ? 'checked' : ''}> 기혼</label>
+                                    </div>
+                                </td>
+                                <th>자녀수</th>
+                                <td><input type="number" name="numberOfChildren" value="${emp?.numberOfChildren || '0'}"></td>
+                            </tr>
+                            <tr>
+                                <th>비상연락처</th>
+                                <td><input name="emergencyContact" value="${emp?.emergencyContact || ''}"></td>
+                                <th>비상연락처 관계</th>
+                                <td><input name="emergencyRelation" value="${emp?.emergencyRelation || ''}"></td>
+                            </tr>
+                        </table>
+                    </div>
+                    
+                    <div id="tab-employment" class="detail-content">
+                        <div class="form-title">재직정보</div>
+                        <table class="form-table">
+                            <tr>
+                                <th class="required">입사일</th>
+                                <td><input type="date" name="hireDate" value="${emp?.hireDate || ''}" required></td>
+                                <th>그룹입사일</th>
+                                <td><input type="date" name="groupHireDate" value="${emp?.groupHireDate || ''}"></td>
+                            </tr>
+                            <tr>
+                                <th>퇴사일</th>
+                                <td><input type="date" name="resignDate" value="${emp?.resignDate || ''}"></td>
+                                <th class="required">재직상태</th>
+                                <td>
+                                    <select name="workStatus" required>
+                                        <option value="재직" ${!emp || emp.workStatus === '재직' ? 'selected' : ''}>재직</option>
+                                        <option value="휴직" ${emp?.workStatus === '휴직' ? 'selected' : ''}>휴직</option>
+                                        <option value="퇴직" ${emp?.workStatus === '퇴직' ? 'selected' : ''}>퇴직</option>
+                                    </select>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th class="required">법인</th>
+                                <td>
+                                    <select name="companyCode" required>
+                                        <option value="">선택</option>
+                                        ${companies.map(c => `<option value="${c.code}" ${emp?.companyCode === c.code ? 'selected' : ''}>${c.name}</option>`).join('')}
+                                    </select>
+                                </td>
+                                <th class="required">부서</th>
+                                <td>
+                                    <select name="departmentCode" required>
+                                        <option value="">선택</option>
+                                        ${depts.map(d => `<option value="${d.code}" ${emp?.departmentCode === d.code ? 'selected' : ''}>${d.name}</option>`).join('')}
+                                    </select>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th class="required">고용형태</th>
+                                <td>
+                                    <select name="employmentType" required>
+                                        <option value="">선택</option>
+                                        <option value="정규직" ${emp?.employmentType === '정규직' ? 'selected' : ''}>정규직</option>
+                                        <option value="계약직" ${emp?.employmentType === '계약직' ? 'selected' : ''}>계약직</option>
+                                        <option value="인턴" ${emp?.employmentType === '인턴' ? 'selected' : ''}>인턴</option>
+                                        <option value="파견직" ${emp?.employmentType === '파견직' ? 'selected' : ''}>파견직</option>
+                                    </select>
+                                </td>
+                                <th class="required">직급</th>
+                                <td>
+                                    <select name="position" required>
+                                        <option value="">선택</option>
+                                        <option value="인턴" ${emp?.position === '인턴' ? 'selected' : ''}>인턴</option>
+                                        <option value="사원" ${emp?.position === '사원' ? 'selected' : ''}>사원</option>
+                                        <option value="주임" ${emp?.position === '주임' ? 'selected' : ''}>주임</option>
+                                        <option value="대리" ${emp?.position === '대리' ? 'selected' : ''}>대리</option>
+                                        <option value="과장" ${emp?.position === '과장' ? 'selected' : ''}>과장</option>
+                                        <option value="차장" ${emp?.position === '차장' ? 'selected' : ''}>차장</option>
+                                        <option value="부장" ${emp?.position === '부장' ? 'selected' : ''}>부장</option>
+                                        <option value="이사" ${emp?.position === '이사' ? 'selected' : ''}>이사</option>
+                                    </select>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>직책</th>
+                                <td><input name="jobTitle" value="${emp?.jobTitle || ''}"></td>
+                                <th>직무</th>
+                                <td><input name="jobRole" value="${emp?.jobRole || ''}"></td>
+                            </tr>
+                            <tr>
+                                <th>근무형태</th>
+                                <td><input name="workType" value="${emp?.workType || ''}"></td>
+                                <th>근무지</th>
+                                <td><input name="workLocation" value="${emp?.workLocation || ''}"></td>
+                            </tr>
+                        </table>
+                    </div>
+                    
+                    <div id="tab-salary" class="detail-content">
+                        <div class="form-title">급여정보</div>
+                        <table class="form-table">
+                            <tr>
+                                <th>급여등급</th>
+                                <td><input name="salaryGrade" value="${emp?.salaryGrade || ''}"></td>
+                                <th>급여등급일</th>
+                                <td><input type="date" name="salaryGradeDate" value="${emp?.salaryGradeDate || ''}"></td>
+                            </tr>
+                            <tr>
+                                <th>기본급</th>
+                                <td><input type="number" name="baseSalary" value="${emp?.baseSalary || ''}"></td>
+                                <th>연봉</th>
+                                <td><input type="number" name="annualSalary" value="${emp?.annualSalary || ''}"></td>
+                            </tr>
+                        </table>
+                        
+                        <div class="form-title">4대보험</div>
+                        <table class="form-table">
+                            <tr>
+                                <td colspan="4">
+                                    <label><input type="checkbox" name="nationalPension" ${emp?.nationalPension ? 'checked' : ''}> 국민연금</label>
+                                    <label><input type="checkbox" name="healthInsurance" ${emp?.healthInsurance ? 'checked' : ''}> 건강보험</label>
+                                    <label><input type="checkbox" name="employmentInsurance" ${emp?.employmentInsurance ? 'checked' : ''}> 고용보험</label>
+                                    <label><input type="checkbox" name="industrialAccident" ${emp?.industrialAccident ? 'checked' : ''}> 산재보험</label>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                    
+                    <div id="tab-attendance" class="detail-content">
+                        <div class="form-title">기타정보</div>
+                        <table class="form-table">
+                            <tr>
+                                <th>노조가입</th>
+                                <td><input type="checkbox" name="unionMember" ${emp?.unionMember ? 'checked' : ''}></td>
+                                <th>우편주소</th>
+                                <td><input name="mailAddress" value="${emp?.mailAddress || ''}"></td>
+                            </tr>
+                            <tr>
+                                <th>장애여부</th>
+                                <td><input type="checkbox" name="disability" ${emp?.disability ? 'checked' : ''}></td>
+                                <th>보훈대상</th>
+                                <td><input type="checkbox" name="veteran" ${emp?.veteran ? 'checked' : ''}></td>
+                            </tr>
+                            <tr>
+                                <th>비고</th>
+                                <td colspan="3"><textarea name="notes">${emp?.notes || ''}</textarea></td>
+                            </tr>
+                        </table>
+                    </div>
+                    
+                    <div class="button-group">
+                        <button type="submit" class="btn btn-primary">💾 저장</button>
+                        <button type="button" class="btn btn-outline" onclick="cancelForm()">취소</button>
+                    </div>
+                </form>
+            `;
+        }
+
+        window.switchTab = function(e, tab) {
+            document.querySelectorAll('.detail-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.detail-content').forEach(c => c.classList.remove('active'));
+            e.target.classList.add('active');
+            document.getElementById('tab-' + tab).classList.add('active');
+        }
+
+        window.saveEmployee = async function(e) {
+            e.preventDefault();
+            showLoading();
+            
+            try {
+                const formData = new FormData(e.target);
+                const data = {};
+                
+                for (let [k, v] of formData.entries()) {
+                    if (e.target.elements[k].type === 'checkbox') {
+                        data[k] = e.target.elements[k].checked;
+                    } else {
+                        data[k] = v;
+                    }
+                }
+                
+                // 라디오 버튼 처리
+                const radios = e.target.querySelectorAll('input[type="radio"]:checked');
+                radios.forEach(radio => {
+                    data[radio.name] = radio.value;
+                });
+                
+                console.log('저장 데이터:', data);
+                
+                await window.setDoc(window.doc(window.db, 'employees', data.employeeId), data);
+                
+                alert('✅ 저장되었습니다!');
+                await loadEmployees();
+                selectEmployee(data.employeeId);
+                
+            } catch (error) {
+                console.error('저장 오류:', error);
+                alert('❌ 저장 오류: ' + error.message);
             }
             
-            employeeData.updatedAt = firebase.firestore.FieldValue.serverTimestamp();
-            if (!currentEmployeeId) {
-                employeeData.createdAt = firebase.firestore.FieldValue.serverTimestamp();
-            }
-            
-            // Firestore에 저장
-            await db.collection('employees').doc(employeeData.employeeId).set(employeeData, { merge: true });
-            
-            alert('✅ ' + (currentEmployeeId ? '수정되었습니다.' : '등록되었습니다.') + ' (Firebase 클라우드에 저장됨)');
-            
-            await loadEmployees();
-            selectEmployee(employeeData.employeeId);
-            
-        } catch (error) {
-            console.error('저장 오류:', error);
-            alert('❌ 저장 중 오류가 발생했습니다: ' + error.message);
+            hideLoading();
         }
-        
-        hideLoading();
-    }
 
-    function cancelForm() {
-        if (currentEmployeeId) {
-            selectEmployee(currentEmployeeId);
-        } else {
+        window.cancelForm = function() {
             document.getElementById('employee-detail').innerHTML = '<div class="empty-state"><h3>직원을 선택하거나 신규 등록하세요</h3></div>';
         }
-    }
+
+        // ===== 임직원 명부 =====
+        async function loadRoster() {
+            showLoading();
+            
+            const companyFilter = document.getElementById('roster-company-filter').value;
+            const deptFilter = document.getElementById('roster-dept-filter').value;
+            
+            // 필터 옵션 로드
+            const companiesSnap = await window.getDocs(window.collection(window.db, 'companies'));
+            const companies = {};
+            companiesSnap.forEach(doc => {
+                const c = doc.data();
+                companies[c.code] = c.name;
+            });
+            
+            const deptsSnap = await window.getDocs(window.collection(window.db, 'departments'));
+            const depts = {};
+            deptsSnap.forEach(doc => {
+                const d = doc.data();
+                depts[d.code] = d.name;
+            });
+            
+            // 법인 필터 업데이트
+            const companySelect = document.getElementById('roster-company-filter');
+            if (companySelect.options.length === 1) {
+                Object.entries(companies).forEach(([code, name]) => {
+                    const option = document.createElement('option');
+                    option.value = code;
+                    option.textContent = name;
+                    companySelect.appendChild(option);
+                });
+            }
+            
+            // 직원 데이터 로드
+            const employeesSnap = await window.getDocs(window.collection(window.db, 'employees'));
+            let employees = [];
+            employeesSnap.forEach(doc => {
+                employees.push(doc.data());
+            });
+            
+            // 필터링
+            if (companyFilter) {
+                employees = employees.filter(e => e.companyCode === companyFilter);
+            }
+            if (deptFilter) {
+                employees = employees.filter(e => e.departmentCode === deptFilter);
+            }
+            
+            // 테이블 렌더링
+            const tbody = document.getElementById('roster-tbody');
+            if (employees.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="10" style="padding: 40px; text-align: center; color: #999;">데이터가 없습니다</td></tr>';
+            } else {
+                tbody.innerHTML = employees.map((emp, idx) => `
+                    <tr style="border-bottom: 1px solid #eee;">
+                        <td style="padding: 10px; border: 1px solid #ddd; text-align: center;">${idx + 1}</td>
+                        <td style="padding: 10px; border: 1px solid #ddd;">${emp.employeeId || '-'}</td>
+                        <td style="padding: 10px; border: 1px solid #ddd; font-weight: bold;">${emp.name || '-'}</td>
+                        <td style="padding: 10px; border: 1px solid #ddd;">${companies[emp.companyCode] || '-'}</td>
+                        <td style="padding: 10px; border: 1px solid #ddd;">${depts[emp.departmentCode] || '-'}</td>
+                        <td style="padding: 10px; border: 1px solid #ddd;">${emp.position || '-'}</td>
+                        <td style="padding: 10px; border: 1px solid #ddd;">${emp.hireDate || '-'}</td>
+                        <td style="padding: 10px; border: 1px solid #ddd;">${emp.workStatus || '-'}</td>
+                        <td style="padding: 10px; border: 1px solid #ddd;">${emp.mobile || '-'}</td>
+                        <td style="padding: 10px; border: 1px solid #ddd;">${emp.companyEmail || emp.personalEmail || '-'}</td>
+                    </tr>
+                `).join('');
+            }
+            
+            hideLoading();
+        }
+
+        window.exportRoster = function() {
+            const table = document.getElementById('roster-table');
+            let csv = [];
+            
+            for (let row of table.rows) {
+                let rowData = [];
+                for (let cell of row.cells) {
+                    rowData.push('"' + cell.textContent.replace(/"/g, '""') + '"');
+                }
+                csv.push(rowData.join(','));
+            }
+            
+            const csvContent = csv.join('\n');
+            const BOM = '\uFEFF';
+            const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = '임직원명부_' + new Date().toISOString().slice(0,10) + '.csv';
+            link.click();
+        }
+
+        // ===== 법인 관리 =====
+        async function loadCompanyManagement() {
+            showLoading();
+            
+            // 법인 목록 로드
+            const companiesSnap = await window.getDocs(window.collection(window.db, 'companies'));
+            const companies = [];
+            companiesSnap.forEach(doc => companies.push(doc.data()));
+            
+            const companyList = document.getElementById('company-list');
+            if (companies.length === 0) {
+                companyList.innerHTML = '<div style="text-align: center; padding: 40px; color: #999;">등록된 법인이 없습니다</div>';
+            } else {
+                companyList.innerHTML = companies.map(c => `
+                    <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                        <h3 style="margin-bottom: 10px; color: #1976d2;">${c.name}</h3>
+                        <p style="margin: 5px 0; font-size: 12px; color: #666;">법인코드: ${c.code}</p>
+                        <p style="margin: 5px 0; font-size: 12px; color: #666;">사업자번호: ${c.businessNumber || '-'}</p>
+                        <p style="margin: 5px 0; font-size: 12px; color: #666;">대표자: ${c.ceo || '-'}</p>
+                        <div style="margin-top: 15px; display: flex; gap: 10px;">
+                            <button class="btn btn-outline" onclick="editCompany('${c.code}')" style="flex: 1; padding: 8px;">수정</button>
+                            <button class="btn btn-secondary" onclick="deleteCompany('${c.code}')" style="flex: 1; padding: 8px;">삭제</button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+            
+            // 부서 목록 로드
+            const deptsSnap = await window.getDocs(window.collection(window.db, 'departments'));
+            const depts = [];
+            deptsSnap.forEach(doc => depts.push(doc.data()));
+            
+            const deptTbody = document.getElementById('dept-list');
+            if (depts.length === 0) {
+                deptTbody.innerHTML = '<tr><td colspan="4" style="padding: 20px; text-align: center; color: #999;">등록된 부서가 없습니다</td></tr>';
+            } else {
+                const companiesMap = {};
+                companies.forEach(c => companiesMap[c.code] = c.name);
+                
+                deptTbody.innerHTML = depts.map(d => `
+                    <tr>
+                        <td style="padding: 12px; border: 1px solid #ddd;">${d.code}</td>
+                        <td style="padding: 12px; border: 1px solid #ddd;">${d.name}</td>
+                        <td style="padding: 12px; border: 1px solid #ddd;">${companiesMap[d.companyCode] || '-'}</td>
+                        <td style="padding: 12px; border: 1px solid #ddd;">
+                            <button class="btn btn-outline" onclick="editDept('${d.code}')" style="padding: 6px 12px; margin-right: 5px;">수정</button>
+                            <button class="btn btn-secondary" onclick="deleteDept('${d.code}')" style="padding: 6px 12px;">삭제</button>
+                        </td>
+                    </tr>
+                `).join('');
+            }
+            
+            hideLoading();
+        }
+
+        window.showAddCompanyForm = function() {
+            const code = 'C' + String(Math.floor(Math.random() * 900 + 100)).padStart(3, '0');
+            
+            if (confirm('새 법인을 추가하시겠습니까?')) {
+                const name = prompt('법인명을 입력하세요:', '');
+                if (!name) return;
+                
+                const businessNumber = prompt('사업자번호를 입력하세요:', '');
+                const ceo = prompt('대표자명을 입력하세요:', '');
+                
+                showLoading();
+                window.setDoc(window.doc(window.db, 'companies', code), {
+                    code: code,
+                    name: name,
+                    businessNumber: businessNumber || '',
+                    ceo: ceo || ''
+                }).then(() => {
+                    alert('법인이 추가되었습니다.');
+                    loadCompanyManagement();
+                }).catch(error => {
+                    alert('오류: ' + error.message);
+                    hideLoading();
+                });
+            }
+        }
+
+        window.editCompany = async function(code) {
+            const docRef = window.doc(window.db, 'companies', code);
+            const docSnap = await window.getDoc(docRef);
+            if (!docSnap.exists()) return;
+            
+            const company = docSnap.data();
+            const name = prompt('법인명:', company.name);
+            if (!name) return;
+            
+            const businessNumber = prompt('사업자번호:', company.businessNumber || '');
+            const ceo = prompt('대표자명:', company.ceo || '');
+            
+            showLoading();
+            window.setDoc(docRef, {
+                code: code,
+                name: name,
+                businessNumber: businessNumber || '',
+                ceo: ceo || ''
+            }).then(() => {
+                alert('수정되었습니다.');
+                loadCompanyManagement();
+            }).catch(error => {
+                alert('오류: ' + error.message);
+                hideLoading();
+            });
+        }
+
+        window.deleteCompany = async function(code) {
+            if (!confirm('이 법인을 삭제하시겠습니까?\n관련 부서와 직원 데이터도 영향을 받을 수 있습니다.')) return;
+            
+            showLoading();
+            await window.deleteDoc(window.doc(window.db, 'companies', code));
+            alert('삭제되었습니다.');
+            loadCompanyManagement();
+        }
+
+        window.showAddDeptForm = async function() {
+            const companiesSnap = await window.getDocs(window.collection(window.db, 'companies'));
+            const companies = [];
+            companiesSnap.forEach(doc => companies.push(doc.data()));
+            
+            if (companies.length === 0) {
+                alert('먼저 법인을 추가해주세요.');
+                return;
+            }
+            
+            const code = 'D' + String(Math.floor(Math.random() * 900 + 100)).padStart(3, '0');
+            const name = prompt('부서명을 입력하세요:', '');
+            if (!name) return;
+            
+            const companyList = companies.map((c, i) => `${i+1}. ${c.name} (${c.code})`).join('\n');
+            const companyCode = prompt('소속 법인 코드를 입력하세요:\n\n' + companyList, companies[0].code);
+            if (!companyCode) return;
+            
+            showLoading();
+            window.setDoc(window.doc(window.db, 'departments', code), {
+                code: code,
+                name: name,
+                companyCode: companyCode
+            }).then(() => {
+                alert('부서가 추가되었습니다.');
+                loadCompanyManagement();
+            }).catch(error => {
+                alert('오류: ' + error.message);
+                hideLoading();
+            });
+        }
+
+        window.editDept = async function(code) {
+            const docRef = window.doc(window.db, 'departments', code);
+            const docSnap = await window.getDoc(docRef);
+            if (!docSnap.exists()) return;
+            
+            const dept = docSnap.data();
+            const name = prompt('부서명:', dept.name);
+            if (!name) return;
+            
+            const companiesSnap = await window.getDocs(window.collection(window.db, 'companies'));
+            const companies = [];
+            companiesSnap.forEach(doc => companies.push(doc.data()));
+            
+            const companyList = companies.map((c, i) => `${i+1}. ${c.name} (${c.code})`).join('\n');
+            const companyCode = prompt('소속 법인 코드:\n\n' + companyList, dept.companyCode);
+            if (!companyCode) return;
+            
+            showLoading();
+            window.setDoc(docRef, {
+                code: code,
+                name: name,
+                companyCode: companyCode
+            }).then(() => {
+                alert('수정되었습니다.');
+                loadCompanyManagement();
+            }).catch(error => {
+                alert('오류: ' + error.message);
+                hideLoading();
+            });
+        }
+
+        window.deleteDept = async function(code) {
+            if (!confirm('이 부서를 삭제하시겠습니까?')) return;
+            
+            showLoading();
+            await window.deleteDoc(window.doc(window.db, 'departments', code));
+            alert('삭제되었습니다.');
+            loadCompanyManagement();
+        }
     </script>
 </body>
 </html>
