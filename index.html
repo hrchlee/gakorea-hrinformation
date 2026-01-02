@@ -198,7 +198,6 @@
                     <table style="width: 100%; border-collapse: collapse; background: white;">
                         <thead style="background: #f5f5f5;">
                             <tr>
-                                <th style="padding: 12px; border: 1px solid #ddd;">부서코드</th>
                                 <th style="padding: 12px; border: 1px solid #ddd;">부서명</th>
                                 <th style="padding: 12px; border: 1px solid #ddd;">근무지</th>
                                 <th style="padding: 12px; border: 1px solid #ddd;">관리</th>
@@ -206,7 +205,7 @@
                         </thead>
                         <tbody id="dept-list">
                             <tr>
-                                <td colspan="4" style="padding: 20px; text-align: center; color: #999;">부서 목록을 불러오는 중...</td>
+                                <td colspan="3" style="padding: 20px; text-align: center; color: #999;">부서 목록을 불러오는 중...</td>
                             </tr>
                         </tbody>
                     </table>
@@ -683,11 +682,20 @@
                                         ${companies.map(c => `<option value="${c.code}" ${emp?.companyCode === c.code ? 'selected' : ''}>${c.name}</option>`).join('')}
                                     </select>
                                 </td>
-                                <th class="required">부서</th>
+                                <th class="required">근무지</th>
                                 <td>
-                                    <select name="departmentCode" required>
+                                    <select name="workLocation" id="workLocation" onchange="filterDepartmentsByLocation()" required>
                                         <option value="">선택</option>
-                                        ${depts.map(d => `<option value="${d.code}" ${emp?.departmentCode === d.code ? 'selected' : ''}>${d.name}</option>`).join('')}
+                                        ${[...new Set(depts.map(d => d.location).filter(l => l))].map(loc => `<option value="${loc}" ${emp?.workLocation === loc ? 'selected' : ''}>${loc}</option>`).join('')}
+                                    </select>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th class="required">부서</th>
+                                <td colspan="3">
+                                    <select name="departmentCode" id="departmentCode" required>
+                                        <option value="">근무지를 먼저 선택하세요</option>
+                                        ${depts.map(d => `<option value="${d.code}" data-location="${d.location}" ${emp?.departmentCode === d.code ? 'selected' : ''}>${d.name}</option>`).join('')}
                                     </select>
                                 </td>
                             </tr>
@@ -725,9 +733,7 @@
                             </tr>
                             <tr>
                                 <th>근무형태</th>
-                                <td><input name="workType" value="${emp?.workType || ''}"></td>
-                                <th>근무지</th>
-                                <td><input name="workLocation" value="${emp?.workLocation || ''}"></td>
+                                <td colspan="3"><input name="workType" value="${emp?.workType || ''}"></td>
                             </tr>
                         </table>
                     </div>
@@ -797,6 +803,26 @@
             document.querySelectorAll('.detail-content').forEach(c => c.classList.remove('active'));
             e.target.classList.add('active');
             document.getElementById('tab-' + tab).classList.add('active');
+        }
+
+        window.filterDepartmentsByLocation = function() {
+            const locationSelect = document.getElementById('workLocation');
+            const deptSelect = document.getElementById('departmentCode');
+            const selectedLocation = locationSelect.value;
+            
+            if (!selectedLocation) {
+                deptSelect.innerHTML = '<option value="">근무지를 먼저 선택하세요</option>';
+                return;
+            }
+            
+            const allOptions = Array.from(deptSelect.options);
+            deptSelect.innerHTML = '<option value="">선택</option>';
+            
+            allOptions.forEach(option => {
+                if (option.dataset.location === selectedLocation) {
+                    deptSelect.appendChild(option);
+                }
+            });
         }
 
         window.saveEmployee = async function(e) {
@@ -967,20 +993,19 @@
             // 부서 목록 로드
             const deptsSnap = await window.getDocs(window.collection(window.db, 'departments'));
             const depts = [];
-            deptsSnap.forEach(doc => depts.push(doc.data()));
+            deptsSnap.forEach(doc => depts.push({id: doc.id, ...doc.data()}));
             
             const deptTbody = document.getElementById('dept-list');
             if (depts.length === 0) {
-                deptTbody.innerHTML = '<tr><td colspan="4" style="padding: 20px; text-align: center; color: #999;">등록된 부서가 없습니다</td></tr>';
+                deptTbody.innerHTML = '<tr><td colspan="3" style="padding: 20px; text-align: center; color: #999;">등록된 부서가 없습니다</td></tr>';
             } else {
                 deptTbody.innerHTML = depts.map(d => `
                     <tr>
-                        <td style="padding: 12px; border: 1px solid #ddd;">${d.code}</td>
                         <td style="padding: 12px; border: 1px solid #ddd;">${d.name}</td>
                         <td style="padding: 12px; border: 1px solid #ddd;">${d.location || '-'}</td>
                         <td style="padding: 12px; border: 1px solid #ddd;">
-                            <button class="btn btn-outline" onclick="editDept('${d.code}')" style="padding: 6px 12px; margin-right: 5px;">수정</button>
-                            <button class="btn btn-secondary" onclick="deleteDept('${d.code}')" style="padding: 6px 12px;">삭제</button>
+                            <button class="btn btn-outline" onclick="editDept('${d.id}')" style="padding: 6px 12px; margin-right: 5px;">수정</button>
+                            <button class="btn btn-secondary" onclick="deleteDept('${d.id}')" style="padding: 6px 12px;">삭제</button>
                         </td>
                     </tr>
                 `).join('');
@@ -1052,17 +1077,19 @@
         }
 
         window.showAddDeptForm = async function() {
-            const code = 'D' + String(Math.floor(Math.random() * 900 + 100)).padStart(3, '0');
             const name = prompt('부서명을 입력하세요:', '');
             if (!name) return;
             
-            const location = prompt('근무지를 입력하세요 (예: 본사, 서울, 분당 등):', '');
+            const location = prompt('근무지를 입력하세요 (예: 본사, 서울, 골드CC 등):', '');
+            if (!location) return;
+            
+            const code = 'D' + Date.now().toString().slice(-6); // 타임스탬프로 고유 코드 생성
             
             showLoading();
             window.setDoc(window.doc(window.db, 'departments', code), {
                 code: code,
                 name: name,
-                location: location || '',
+                location: location,
                 companyCode: 'C001' // 기본값으로 GA KOREA 설정
             }).then(() => {
                 alert('부서가 추가되었습니다.');
@@ -1082,13 +1109,14 @@
             const name = prompt('부서명:', dept.name);
             if (!name) return;
             
-            const location = prompt('근무지:', dept.location || '');
+            const location = prompt('근무지 (예: 본사, 서울, 골드CC 등):', dept.location || '');
+            if (!location) return;
             
             showLoading();
             window.setDoc(docRef, {
                 code: code,
                 name: name,
-                location: location || '',
+                location: location,
                 companyCode: dept.companyCode || 'C001' // 기존 값 유지
             }).then(() => {
                 alert('수정되었습니다.');
