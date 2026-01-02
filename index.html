@@ -134,6 +134,10 @@
                     <h3>법인</h3>
                     <select id="filter-company" onchange="filterEmployees()"></select>
                 </div>
+                <div style="padding: 0 15px 10px; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid #e0e0e0;">
+                    <input type="checkbox" id="select-all-checkbox" onclick="toggleSelectAll()" style="width: 16px; height: 16px; cursor: pointer;">
+                    <label for="select-all-checkbox" style="cursor: pointer; font-size: 13px; color: #666;">전체 선택</label>
+                </div>
                 <div class="employee-list" id="employee-list">
                     <div class="empty-state"><p>직원이 없습니다</p></div>
                 </div>
@@ -615,7 +619,15 @@
                 return emp ? emp.name : id;
             });
             
-            if (!confirm(`다음 ${employeeIds.length}명의 직원을 삭제하시겠습니까?\n\n${names.join(', ')}`)) {
+            // 강화된 삭제 확인
+            const confirmMessage = `정말로 다음 ${employeeIds.length}명의 직원을 삭제하시겠습니까?\n\n${names.join(', ')}\n\n⚠️ 이 작업은 되돌릴 수 없습니다!`;
+            
+            if (!confirm(confirmMessage)) {
+                return;
+            }
+            
+            // 두 번째 확인
+            if (!confirm('정말 삭제하시겠습니까? (최종 확인)')) {
                 return;
             }
             
@@ -638,12 +650,24 @@
                 alert(`삭제 완료!\n\n성공: ${successCount}명\n실패: ${failCount}명`);
                 await loadEmployees();
                 
+                // 전체 선택 체크박스 해제
+                document.getElementById('select-all-checkbox').checked = false;
+                
             } catch (error) {
                 console.error('일괄 삭제 오류:', error);
                 alert('삭제 중 오류가 발생했습니다.');
             }
             
             hideLoading();
+        }
+
+        window.toggleSelectAll = function() {
+            const selectAllCheckbox = document.getElementById('select-all-checkbox');
+            const checkboxes = document.querySelectorAll('.employee-checkbox');
+            
+            checkboxes.forEach(cb => {
+                cb.checked = selectAllCheckbox.checked;
+            });
         }
 
         function selectEmployee(id) {
@@ -839,12 +863,27 @@
         }
 
         async function deleteEmployee(id) {
-            if (!confirm('삭제하시겠습니까?')) return;
+            const emp = allEmployees.find(e => e.employeeId === id);
+            const empName = emp ? emp.name : id;
+            
+            // 강화된 삭제 확인
+            if (!confirm(`정말로 "${empName}" 직원을 삭제하시겠습니까?\n\n⚠️ 이 작업은 되돌릴 수 없습니다!`)) return;
+            
+            // 두 번째 확인
+            if (!confirm('정말 삭제하시겠습니까? (최종 확인)')) return;
+            
             showLoading();
             await window.deleteDoc(window.doc(window.db, 'employees', id));
             alert('삭제되었습니다.');
             await loadEmployees();
-            document.getElementById('employee-detail').innerHTML = '<div class="empty-state"><h3>직원을 선택하거나 신규 등록하세요</h3></div>';
+            document.getElementById('employee-detail').innerHTML = `
+                <div style="display: flex; justify-content: flex-end; gap: 10px; margin-bottom: 20px;">
+                    <button class="btn btn-outline" onclick="downloadExcelTemplate()">📥 엑셀 양식 다운로드</button>
+                    <button class="btn btn-primary" onclick="document.getElementById('excel-upload').click()">📤 엑셀 업로드</button>
+                    <input type="file" id="excel-upload" accept=".xlsx,.xls" style="display: none;" onchange="handleExcelUpload(event)">
+                </div>
+                <div class="empty-state"><h3>직원을 선택하거나 신규 등록하세요</h3></div>
+            `;
             hideLoading();
         }
 
@@ -874,7 +913,13 @@
             dSnap.forEach(doc => depts.push(doc.data()));
             
             document.getElementById('employee-detail').innerHTML = `
-                <h2>${emp ? '직원 정보 수정' : '신규 직원 등록'}</h2>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h2>${emp ? '직원 정보 수정' : '신규 직원 등록'}</h2>
+                    <div style="display: flex; gap: 10px;">
+                        <button type="button" class="btn btn-outline" onclick="downloadExcelTemplate()">📥 엑셀 양식 다운로드</button>
+                        <button type="button" class="btn btn-primary" onclick="document.getElementById('excel-upload').click()">📤 엑셀 업로드</button>
+                    </div>
+                </div>
                 <form id="emp-form" onsubmit="saveEmployee(event)">
                     <div class="detail-tabs">
                         <button type="button" class="detail-tab active" onclick="switchTab(event, 'personal')">인적정보</button>
@@ -1290,6 +1335,29 @@
         }
 
         // ===== 엑셀 업로드 =====
+        
+        // 엑셀 날짜 변환 함수 (5자리 숫자 → YYYY-MM-DD)
+        function excelDateToJSDate(excelDate) {
+            if (!excelDate) return '';
+            
+            // 이미 날짜 형식이면 그대로 반환
+            if (typeof excelDate === 'string' && excelDate.includes('-')) {
+                return excelDate;
+            }
+            
+            // 숫자인 경우 (엑셀 날짜 시리얼)
+            if (typeof excelDate === 'number') {
+                // 엑셀 날짜는 1900년 1월 1일을 기준으로 한 일수
+                const date = new Date((excelDate - 25569) * 86400 * 1000);
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+                return `${year}-${month}-${day}`;
+            }
+            
+            return String(excelDate);
+        }
+        
         window.handleExcelUpload = async function(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -1386,7 +1454,7 @@
                             nameEn: row['영문명'] || '',
                             nationality: row['내외국인'] || '내국인',
                             gender: row['성별'] || '',
-                            birthDate: row['생년월일'] || '',
+                            birthDate: excelDateToJSDate(row['생년월일']),
                             residentNumber: row['주민등록번호'] || '',
                             mobile: row['휴대전화'] || '',
                             phone: row['전화번호'] || '',
@@ -1399,14 +1467,14 @@
                             education: row['최종학력'] || '',
                             schoolName: row['학교명'] || '',
                             major: row['전공'] || '',
-                            graduationDate: row['졸업일'] || '',
+                            graduationDate: excelDateToJSDate(row['졸업일']),
                             maritalStatus: row['결혼여부'] || '미혼',
                             numberOfChildren: String(row['자녀수'] || '0'),
                             emergencyContact: row['비상연락처'] || '',
                             emergencyRelation: row['비상연락처관계'] || '',
-                            hireDate: row['입사일'] || '',
-                            groupHireDate: row['그룹입사일'] || '',
-                            resignDate: row['퇴사일'] || '',
+                            hireDate: excelDateToJSDate(row['입사일']),
+                            groupHireDate: excelDateToJSDate(row['그룹입사일']),
+                            resignDate: excelDateToJSDate(row['퇴사일']),
                             workStatus: row['재직상태'] || '재직',
                             companyCode: companyCode,
                             workLocation: row['근무지'] || '',
