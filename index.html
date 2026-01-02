@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GA KOREA 인사정보등록</title>
+    <title>GA KOREA 인사관리시스템</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script>
     // HTTPS 강제 리다이렉트
@@ -104,7 +104,7 @@
 
     <div id="main-screen" class="main-screen">
         <div class="header">
-            <div class="header-left"><h1>GA KOREA 인사정보등록</h1></div>
+            <div class="header-left"><h1>GA KOREA 인사관리시스템</h1></div>
             <div class="header-right">
                 <div class="user-info"><strong id="current-user"></strong></div>
                 <button class="logout-btn" onclick="logout()">로그아웃</button>
@@ -277,6 +277,13 @@
                         <h3 style="margin-bottom: 15px; color: #1976d2;">직위 설정</h3>
                         <div id="jobtitle-list" style="margin-bottom: 15px; max-height: 200px; overflow-y: auto;"></div>
                         <button class="btn btn-outline" onclick="addSetting('jobTitle')" style="width: 100%; padding: 8px;">+ 직위 추가</button>
+                    </div>
+
+                    <!-- 직책 설정 -->
+                    <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                        <h3 style="margin-bottom: 15px; color: #1976d2;">직책 설정</h3>
+                        <div id="jobrole-list" style="margin-bottom: 15px; max-height: 200px; overflow-y: auto;"></div>
+                        <button class="btn btn-outline" onclick="addSetting('jobRole')" style="width: 100%; padding: 8px;">+ 직책 추가</button>
                     </div>
 
                     <!-- 근무지 설정 -->
@@ -1881,6 +1888,7 @@
             let settings = {
                 positions: ['인턴', '사원', '주임', '대리', '과장', '차장', '부장', '이사'],
                 jobTitles: ['팀원', '주임', '대리', '팀장', '파트장', '실장', '본부장'],
+                jobRoles: ['회장', '대표이사', '부사장', '전무', '상무', '이사', '감사'],
                 locations: ['본사', '서울', '골드CC', '코리아CC', '3.5홀'],
                 employmentTypes: ['정규직', '계약직', '인턴', '파견직']
             };
@@ -1916,6 +1924,14 @@
                 </div>
             `).join('');
             
+            // 직책
+            document.getElementById('jobrole-list').innerHTML = (settings.jobRoles || []).map((item, idx) => `
+                <div style="display: flex; justify-content: space-between; padding: 8px; border-bottom: 1px solid #f0f0f0;">
+                    <span>${item}</span>
+                    <button onclick="deleteSettingItem('jobRole', ${idx})" style="background: none; border: none; cursor: pointer; color: #f44336; padding: 2px 6px;">✕</button>
+                </div>
+            `).join('');
+            
             // 근무지
             document.getElementById('location-list').innerHTML = settings.locations.map((item, idx) => `
                 <div style="display: flex; justify-content: space-between; padding: 8px; border-bottom: 1px solid #f0f0f0;">
@@ -1937,6 +1953,7 @@
             const labels = {
                 position: '직급',
                 jobTitle: '직위',
+                jobRole: '직책',
                 location: '근무지',
                 employmentType: '고용형태'
             };
@@ -1951,7 +1968,10 @@
             
             const key = type === 'position' ? 'positions' : 
                        type === 'jobTitle' ? 'jobTitles' :
+                       type === 'jobRole' ? 'jobRoles' :
                        type === 'location' ? 'locations' : 'employmentTypes';
+            
+            if (!settings[key]) settings[key] = [];
             
             if (!settings[key].includes(value)) {
                 settings[key].push(value);
@@ -1974,6 +1994,7 @@
             
             const key = type === 'position' ? 'positions' : 
                        type === 'jobTitle' ? 'jobTitles' :
+                       type === 'jobRole' ? 'jobRoles' :
                        type === 'location' ? 'locations' : 'employmentTypes';
             
             settings[key].splice(index, 1);
