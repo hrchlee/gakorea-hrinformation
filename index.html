@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GA KOREA 인사정보등록</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script>
     // HTTPS 강제 리다이렉트
     if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
@@ -129,6 +130,11 @@
             </div>
 
             <div class="main-content" id="employee-detail">
+                <div style="display: flex; justify-content: flex-end; gap: 10px; margin-bottom: 20px;">
+                    <button class="btn btn-outline" onclick="downloadExcelTemplate()">📥 엑셀 양식 다운로드</button>
+                    <button class="btn btn-primary" onclick="document.getElementById('excel-upload').click()">📤 엑셀 업로드</button>
+                    <input type="file" id="excel-upload" accept=".xlsx,.xls" style="display: none;" onchange="handleExcelUpload(event)">
+                </div>
                 <div class="empty-state"><h3>직원을 선택하거나 신규 등록하세요</h3></div>
             </div>
         </div>
@@ -864,7 +870,224 @@
         }
 
         window.cancelForm = function() {
-            document.getElementById('employee-detail').innerHTML = '<div class="empty-state"><h3>직원을 선택하거나 신규 등록하세요</h3></div>';
+            document.getElementById('employee-detail').innerHTML = `
+                <div style="display: flex; justify-content: flex-end; gap: 10px; margin-bottom: 20px;">
+                    <button class="btn btn-outline" onclick="downloadExcelTemplate()">📥 엑셀 양식 다운로드</button>
+                    <button class="btn btn-primary" onclick="document.getElementById('excel-upload').click()">📤 엑셀 업로드</button>
+                    <input type="file" id="excel-upload" accept=".xlsx,.xls" style="display: none;" onchange="handleExcelUpload(event)">
+                </div>
+                <div class="empty-state"><h3>직원을 선택하거나 신규 등록하세요</h3></div>
+            `;
+        }
+
+        // ===== 엑셀 다운로드 (양식) =====
+        window.downloadExcelTemplate = function() {
+            const template = [
+                {
+                    '사번': '26011001',
+                    '성명': '홍길동',
+                    '영문명': 'Hong Gil Dong',
+                    '내외국인': '내국인',
+                    '성별': '남성',
+                    '생년월일': '1990-01-01',
+                    '주민등록번호': '900101-1234567',
+                    '휴대전화': '010-1234-5678',
+                    '전화번호': '02-1234-5678',
+                    '주소': '서울시 강남구',
+                    '이메일(회사)': 'hong@gakorea.com',
+                    '이메일(개인)': 'hong@email.com',
+                    '은행명': '신한은행',
+                    '계좌번호': '110-123-456789',
+                    '예금주': '홍길동',
+                    '최종학력': '대졸',
+                    '학교명': 'OO대학교',
+                    '전공': '경영학',
+                    '졸업일': '2012-02-28',
+                    '결혼여부': '기혼',
+                    '자녀수': '2',
+                    '비상연락처': '010-9876-5432',
+                    '비상연락처관계': '배우자',
+                    '입사일': '2020-01-01',
+                    '그룹입사일': '2020-01-01',
+                    '퇴사일': '',
+                    '재직상태': '재직',
+                    '법인': 'GA KOREA',
+                    '근무지': '본사',
+                    '부서': '인사팀',
+                    '고용형태': '정규직',
+                    '직급': '대리',
+                    '직책': '팀원',
+                    '직무': '인사관리',
+                    '근무형태': '주5일',
+                    '급여등급': 'G3',
+                    '기본급': '3000000',
+                    '연봉': '40000000',
+                    '국민연금': 'O',
+                    '건강보험': 'O',
+                    '고용보험': 'O',
+                    '산재보험': 'O',
+                    '비고': ''
+                }
+            ];
+
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.json_to_sheet(template);
+            
+            // 컬럼 너비 설정
+            ws['!cols'] = [
+                {wch: 12}, {wch: 10}, {wch: 15}, {wch: 10}, {wch: 8},
+                {wch: 12}, {wch: 18}, {wch: 15}, {wch: 15}, {wch: 30},
+                {wch: 20}, {wch: 20}, {wch: 12}, {wch: 18}, {wch: 10},
+                {wch: 10}, {wch: 15}, {wch: 12}, {wch: 12}, {wch: 10},
+                {wch: 8}, {wch: 15}, {wch: 12}, {wch: 12}, {wch: 12},
+                {wch: 12}, {wch: 10}, {wch: 15}, {wch: 12}, {wch: 12},
+                {wch: 10}, {wch: 10}, {wch: 10}, {wch: 10}, {wch: 12},
+                {wch: 12}, {wch: 12}, {wch: 12}, {wch: 10}, {wch: 10},
+                {wch: 10}, {wch: 10}, {wch: 30}
+            ];
+            
+            XLSX.utils.book_append_sheet(wb, ws, '직원목록');
+            XLSX.writeFile(wb, '직원등록_양식.xlsx');
+        }
+
+        // ===== 엑셀 업로드 =====
+        window.handleExcelUpload = async function(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            showLoading();
+
+            try {
+                const data = await file.arrayBuffer();
+                const workbook = XLSX.read(data);
+                const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                const jsonData = XLSX.utils.sheet_to_json(firstSheet);
+
+                console.log('엑셀 데이터:', jsonData);
+
+                if (jsonData.length === 0) {
+                    alert('엑셀 파일에 데이터가 없습니다.');
+                    hideLoading();
+                    return;
+                }
+
+                // 법인, 부서 매핑 데이터 로드
+                const companiesSnap = await window.getDocs(window.collection(window.db, 'companies'));
+                const companyMap = {};
+                companiesSnap.forEach(doc => {
+                    const c = doc.data();
+                    companyMap[c.name] = c.code;
+                });
+
+                const deptsSnap = await window.getDocs(window.collection(window.db, 'departments'));
+                const deptMap = {};
+                deptsSnap.forEach(doc => {
+                    const d = doc.data();
+                    deptMap[d.name + '_' + d.location] = d.code;
+                });
+
+                let successCount = 0;
+                let errorCount = 0;
+                const errors = [];
+
+                for (let i = 0; i < jsonData.length; i++) {
+                    const row = jsonData[i];
+                    
+                    try {
+                        // 필수 필드 검증
+                        if (!row['사번'] || !row['성명'] || !row['입사일']) {
+                            errors.push(`${i+2}행: 필수 항목 누락 (사번, 성명, 입사일)`);
+                            errorCount++;
+                            continue;
+                        }
+
+                        // 법인 코드 찾기
+                        const companyCode = companyMap[row['법인']] || 'C001';
+                        
+                        // 부서 코드 찾기 (부서명 + 근무지)
+                        const deptKey = (row['부서'] || '') + '_' + (row['근무지'] || '');
+                        const departmentCode = deptMap[deptKey] || '';
+
+                        // 데이터 매핑
+                        const employeeData = {
+                            employeeId: String(row['사번']),
+                            name: row['성명'],
+                            nameEn: row['영문명'] || '',
+                            nationality: row['내외국인'] || '내국인',
+                            gender: row['성별'] || '남성',
+                            birthDate: row['생년월일'] || '',
+                            residentNumber: row['주민등록번호'] || '',
+                            mobile: row['휴대전화'] || '',
+                            phone: row['전화번호'] || '',
+                            address: row['주소'] || '',
+                            companyEmail: row['이메일(회사)'] || '',
+                            personalEmail: row['이메일(개인)'] || '',
+                            bankName: row['은행명'] || '',
+                            accountNumber: row['계좌번호'] || '',
+                            accountHolder: row['예금주'] || '',
+                            education: row['최종학력'] || '',
+                            schoolName: row['학교명'] || '',
+                            major: row['전공'] || '',
+                            graduationDate: row['졸업일'] || '',
+                            maritalStatus: row['결혼여부'] || '미혼',
+                            numberOfChildren: String(row['자녀수'] || '0'),
+                            emergencyContact: row['비상연락처'] || '',
+                            emergencyRelation: row['비상연락처관계'] || '',
+                            hireDate: row['입사일'] || '',
+                            groupHireDate: row['그룹입사일'] || '',
+                            resignDate: row['퇴사일'] || '',
+                            workStatus: row['재직상태'] || '재직',
+                            companyCode: companyCode,
+                            workLocation: row['근무지'] || '',
+                            departmentCode: departmentCode,
+                            employmentType: row['고용형태'] || '정규직',
+                            position: row['직급'] || '',
+                            jobTitle: row['직책'] || '',
+                            jobRole: row['직무'] || '',
+                            workType: row['근무형태'] || '',
+                            salaryGrade: row['급여등급'] || '',
+                            baseSalary: String(row['기본급'] || ''),
+                            annualSalary: String(row['연봉'] || ''),
+                            nationalPension: (row['국민연금'] === 'O' || row['국민연금'] === 'o'),
+                            healthInsurance: (row['건강보험'] === 'O' || row['건강보험'] === 'o'),
+                            employmentInsurance: (row['고용보험'] === 'O' || row['고용보험'] === 'o'),
+                            industrialAccident: (row['산재보험'] === 'O' || row['산재보험'] === 'o'),
+                            notes: row['비고'] || ''
+                        };
+
+                        await window.setDoc(window.doc(window.db, 'employees', employeeData.employeeId), employeeData);
+                        successCount++;
+                        
+                    } catch (error) {
+                        console.error(`${i+2}행 저장 오류:`, error);
+                        errors.push(`${i+2}행: ${error.message}`);
+                        errorCount++;
+                    }
+                }
+
+                hideLoading();
+
+                let resultMessage = `업로드 완료!\n\n성공: ${successCount}건\n실패: ${errorCount}건`;
+                if (errors.length > 0) {
+                    resultMessage += '\n\n오류 내역:\n' + errors.slice(0, 5).join('\n');
+                    if (errors.length > 5) {
+                        resultMessage += `\n... 외 ${errors.length - 5}건`;
+                    }
+                }
+
+                alert(resultMessage);
+                
+                // 직원 목록 새로고침
+                await loadEmployees();
+
+            } catch (error) {
+                hideLoading();
+                console.error('엑셀 업로드 오류:', error);
+                alert('엑셀 파일 처리 중 오류가 발생했습니다.\n' + error.message);
+            }
+
+            // 파일 입력 초기화
+            event.target.value = '';
         }
 
         // ===== 임직원 명부 =====
