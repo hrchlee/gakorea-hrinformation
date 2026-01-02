@@ -127,6 +127,7 @@
                     <div class="empty-state"><p>직원이 없습니다</p></div>
                 </div>
                 <button class="btn btn-primary" style="width: 100%; margin-top: 15px;" onclick="showNewEmployeeForm()">+ 신규 등록</button>
+                <button class="btn btn-secondary" style="width: 100%; margin-top: 10px;" onclick="deleteSelectedEmployees()" id="delete-selected-btn">🗑️ 선택 삭제</button>
             </div>
 
             <div class="main-content" id="employee-detail">
@@ -231,8 +232,40 @@
         <!-- 시스템 관리자 탭 -->
         <div id="admin-tab" class="layout" style="display: none;">
             <div class="main-content" style="padding: 30px;">
-                <h2 style="margin-bottom: 30px;">시스템 관리자 설정</h2>
+                <h2 style="margin-bottom: 30px;">시스템 설정</h2>
 
+                <!-- 설정값 관리 -->
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; margin-bottom: 40px;">
+                    <!-- 직급 설정 -->
+                    <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                        <h3 style="margin-bottom: 15px; color: #1976d2;">직급 설정</h3>
+                        <div id="position-list" style="margin-bottom: 15px; max-height: 200px; overflow-y: auto;"></div>
+                        <button class="btn btn-outline" onclick="addSetting('position')" style="width: 100%; padding: 8px;">+ 직급 추가</button>
+                    </div>
+
+                    <!-- 직위 설정 -->
+                    <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                        <h3 style="margin-bottom: 15px; color: #1976d2;">직위 설정</h3>
+                        <div id="jobtitle-list" style="margin-bottom: 15px; max-height: 200px; overflow-y: auto;"></div>
+                        <button class="btn btn-outline" onclick="addSetting('jobTitle')" style="width: 100%; padding: 8px;">+ 직위 추가</button>
+                    </div>
+
+                    <!-- 근무지 설정 -->
+                    <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                        <h3 style="margin-bottom: 15px; color: #1976d2;">근무지 설정</h3>
+                        <div id="location-list" style="margin-bottom: 15px; max-height: 200px; overflow-y: auto;"></div>
+                        <button class="btn btn-outline" onclick="addSetting('location')" style="width: 100%; padding: 8px;">+ 근무지 추가</button>
+                    </div>
+
+                    <!-- 고용형태 설정 -->
+                    <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                        <h3 style="margin-bottom: 15px; color: #1976d2;">고용형태 설정</h3>
+                        <div id="employmenttype-list" style="margin-bottom: 15px; max-height: 200px; overflow-y: auto;"></div>
+                        <button class="btn btn-outline" onclick="addSetting('employmentType')" style="width: 100%; padding: 8px;">+ 고용형태 추가</button>
+                    </div>
+                </div>
+
+                <!-- 관리자 계정 관리 -->
                 <div style="max-width: 600px; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
                     <h3 style="margin-bottom: 20px; color: #1976d2;">관리자 계정 관리</h3>
                     
@@ -486,11 +519,59 @@
             }
             
             list.innerHTML = employees.map(emp => `
-                <div class="employee-item" onclick="selectEmployee('${emp.employeeId}')">
-                    <div class="name">${emp.name}</div>
-                    <div class="info">${emp.employeeId}</div>
+                <div class="employee-item" style="display: flex; align-items: center; gap: 8px;">
+                    <input type="checkbox" class="employee-checkbox" value="${emp.employeeId}" 
+                           onclick="event.stopPropagation()" style="width: 16px; height: 16px; cursor: pointer;">
+                    <div style="flex: 1; cursor: pointer;" onclick="selectEmployee('${emp.employeeId}')">
+                        <div class="name">${emp.name}</div>
+                        <div class="info">${emp.employeeId}</div>
+                    </div>
                 </div>
             `).join('');
+        }
+
+        window.deleteSelectedEmployees = async function() {
+            const checkboxes = document.querySelectorAll('.employee-checkbox:checked');
+            if (checkboxes.length === 0) {
+                alert('삭제할 직원을 선택해주세요.');
+                return;
+            }
+            
+            const employeeIds = Array.from(checkboxes).map(cb => cb.value);
+            const names = employeeIds.map(id => {
+                const emp = allEmployees.find(e => e.employeeId === id);
+                return emp ? emp.name : id;
+            });
+            
+            if (!confirm(`다음 ${employeeIds.length}명의 직원을 삭제하시겠습니까?\n\n${names.join(', ')}`)) {
+                return;
+            }
+            
+            showLoading();
+            
+            try {
+                let successCount = 0;
+                let failCount = 0;
+                
+                for (const id of employeeIds) {
+                    try {
+                        await window.deleteDoc(window.doc(window.db, 'employees', id));
+                        successCount++;
+                    } catch (error) {
+                        console.error(`직원 ${id} 삭제 실패:`, error);
+                        failCount++;
+                    }
+                }
+                
+                alert(`삭제 완료!\n\n성공: ${successCount}명\n실패: ${failCount}명`);
+                await loadEmployees();
+                
+            } catch (error) {
+                console.error('일괄 삭제 오류:', error);
+                alert('삭제 중 오류가 발생했습니다.');
+            }
+            
+            hideLoading();
         }
 
         function selectEmployee(id) {
@@ -983,18 +1064,50 @@
                 // 법인, 부서 매핑 데이터 로드
                 const companiesSnap = await window.getDocs(window.collection(window.db, 'companies'));
                 const companyMap = {};
+                const companyNameToCode = {};
                 companiesSnap.forEach(doc => {
                     const c = doc.data();
-                    companyMap[c.name] = c.code;
+                    companyMap[c.code] = c.name;
+                    companyNameToCode[c.name] = c.code;
                 });
 
                 const deptsSnap = await window.getDocs(window.collection(window.db, 'departments'));
                 const deptMap = {};
                 deptsSnap.forEach(doc => {
                     const d = doc.data();
-                    // 부서명만으로 매핑 (근무지 조합 제거)
                     deptMap[d.name] = d.code;
                 });
+
+                // 신규 법인 자동 생성
+                const newCompanies = new Set();
+                for (const row of jsonData) {
+                    if (row['법인'] && !companyNameToCode[row['법인']]) {
+                        newCompanies.add(row['법인']);
+                    }
+                }
+
+                if (newCompanies.size > 0) {
+                    const createCompanies = confirm(
+                        `다음 법인이 시스템에 등록되어 있지 않습니다.\n자동으로 생성하시겠습니까?\n\n${Array.from(newCompanies).join(', ')}`
+                    );
+                    
+                    if (createCompanies) {
+                        for (const companyName of newCompanies) {
+                            const newCode = 'C' + String(Math.floor(Math.random() * 900 + 100)).padStart(3, '0');
+                            await window.setDoc(window.doc(window.db, 'companies', newCode), {
+                                code: newCode,
+                                name: companyName,
+                                businessNumber: '',
+                                ceo: ''
+                            });
+                            companyNameToCode[companyName] = newCode;
+                            console.log(`법인 생성: ${companyName} (${newCode})`);
+                        }
+                    } else {
+                        hideLoading();
+                        return;
+                    }
+                }
 
                 let successCount = 0;
                 let errorCount = 0;
@@ -1012,7 +1125,7 @@
                         }
 
                         // 법인 코드 찾기
-                        const companyCode = companyMap[row['법인']] || 'C001';
+                        const companyCode = companyNameToCode[row['법인']] || 'C001';
                         
                         // 부서 코드 찾기
                         const departmentCode = deptMap[row['부서']] || '';
@@ -1431,37 +1544,159 @@
         async function loadAdminManagement() {
             showLoading();
             
+            // 설정값 로드
+            await loadSettings();
+            
+            // 관리자 계정 로드
             const usersSnap = await window.getDocs(window.collection(window.db, 'users'));
             const users = [];
-            usersSnap.forEach(doc => users.push({ id: doc.id, ...doc.data() }));
+            usersSnap.forEach(doc => users.push({id: doc.id, ...doc.data()}));
             
-            const adminList = document.getElementById('admin-accounts-list');
-            if (users.length === 0) {
-                adminList.innerHTML = '<p style="color: #999;">등록된 관리자가 없습니다.</p>';
-            } else {
-                adminList.innerHTML = users.map(u => `
-                    <div style="background: #f9f9f9; padding: 15px; border-radius: 6px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center;">
+            const list = document.getElementById('admin-accounts-list');
+            list.innerHTML = users.map(u => `
+                <div style="padding: 15px; border: 1px solid #e0e0e0; border-radius: 4px; margin-bottom: 10px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
                         <div>
-                            <div style="font-weight: bold; font-size: 14px; margin-bottom: 5px;">
-                                ${u.name} 
-                                <span style="font-size: 11px; background: ${u.role === 'admin' ? '#1976d2' : '#757575'}; color: white; padding: 2px 8px; border-radius: 10px; margin-left: 8px;">
-                                    ${u.role === 'admin' ? '시스템 관리자' : '일반 관리자'}
-                                </span>
-                            </div>
-                            <div style="font-size: 12px; color: #666;">
-                                아이디: ${u.username}
-                            </div>
-                            <div style="font-size: 11px; color: ${u.active ? '#4caf50' : '#f44336'}; margin-top: 3px;">
-                                ${u.active ? '✓ 활성' : '✗ 비활성'}
+                            <strong>${u.name || u.username}</strong>
+                            <div style="font-size: 11px; color: #666; margin-top: 4px;">
+                                ${u.username} | ${u.role === 'admin' ? '시스템 관리자' : '일반 관리자'}
+                                ${u.active ? '' : ' (비활성)'}
                             </div>
                         </div>
-                        <div style="display: flex; gap: 8px;">
-                            <button class="btn btn-outline" onclick="changeAdminPassword('${u.id}')" style="padding: 6px 12px; font-size: 11px;">비밀번호 변경</button>
-                            <button class="btn btn-outline" onclick="editAdmin('${u.id}')" style="padding: 6px 12px; font-size: 11px;">수정</button>
-                            ${u.id !== 'admin' ? `<button class="btn btn-secondary" onclick="deleteAdmin('${u.id}')" style="padding: 6px 12px; font-size: 11px;">삭제</button>` : ''}
+                        <div>
+                            <button class="btn btn-outline" onclick="editAdmin('${u.id}')" style="padding: 6px 12px; margin-right: 5px;">수정</button>
+                            ${u.id === 'admin' ? '' : `<button class="btn btn-secondary" onclick="deleteAdmin('${u.id}')" style="padding: 6px 12px;">삭제</button>`}
                         </div>
                     </div>
-                `).join('');
+                </div>
+            `).join('');
+            
+            hideLoading();
+        }
+
+        // ===== 설정값 관리 =====
+        async function loadSettings() {
+            // Firebase에서 설정값 로드 또는 기본값 사용
+            const settingsDoc = await window.getDoc(window.doc(window.db, 'settings', 'master'));
+            
+            let settings = {
+                positions: ['인턴', '사원', '주임', '대리', '과장', '차장', '부장', '이사'],
+                jobTitles: ['팀원', '주임', '대리', '팀장', '파트장', '실장', '본부장'],
+                locations: ['본사', '서울', '골드CC', '코리아CC', '3.5홀'],
+                employmentTypes: ['정규직', '계약직', '인턴', '파견직']
+            };
+            
+            if (settingsDoc.exists()) {
+                settings = {...settings, ...settingsDoc.data()};
+            } else {
+                // 기본 설정 저장
+                await window.setDoc(window.doc(window.db, 'settings', 'master'), settings);
+            }
+            
+            renderSettings(settings);
+        }
+
+        function renderSettings(settings) {
+            // 직급
+            document.getElementById('position-list').innerHTML = settings.positions.map((item, idx) => `
+                <div style="display: flex; justify-content: space-between; padding: 8px; border-bottom: 1px solid #f0f0f0;">
+                    <span>${item}</span>
+                    <div>
+                        ${idx > 0 ? `<button onclick="moveSettingItem('position', ${idx}, -1)" style="background: none; border: none; cursor: pointer; padding: 2px 6px;">↑</button>` : ''}
+                        ${idx < settings.positions.length - 1 ? `<button onclick="moveSettingItem('position', ${idx}, 1)" style="background: none; border: none; cursor: pointer; padding: 2px 6px;">↓</button>` : ''}
+                        <button onclick="deleteSettingItem('position', ${idx})" style="background: none; border: none; cursor: pointer; color: #f44336; padding: 2px 6px;">✕</button>
+                    </div>
+                </div>
+            `).join('');
+            
+            // 직위
+            document.getElementById('jobtitle-list').innerHTML = settings.jobTitles.map((item, idx) => `
+                <div style="display: flex; justify-content: space-between; padding: 8px; border-bottom: 1px solid #f0f0f0;">
+                    <span>${item}</span>
+                    <button onclick="deleteSettingItem('jobTitle', ${idx})" style="background: none; border: none; cursor: pointer; color: #f44336; padding: 2px 6px;">✕</button>
+                </div>
+            `).join('');
+            
+            // 근무지
+            document.getElementById('location-list').innerHTML = settings.locations.map((item, idx) => `
+                <div style="display: flex; justify-content: space-between; padding: 8px; border-bottom: 1px solid #f0f0f0;">
+                    <span>${item}</span>
+                    <button onclick="deleteSettingItem('location', ${idx})" style="background: none; border: none; cursor: pointer; color: #f44336; padding: 2px 6px;">✕</button>
+                </div>
+            `).join('');
+            
+            // 고용형태
+            document.getElementById('employmenttype-list').innerHTML = settings.employmentTypes.map((item, idx) => `
+                <div style="display: flex; justify-content: space-between; padding: 8px; border-bottom: 1px solid #f0f0f0;">
+                    <span>${item}</span>
+                    <button onclick="deleteSettingItem('employmentType', ${idx})" style="background: none; border: none; cursor: pointer; color: #f44336; padding: 2px 6px;">✕</button>
+                </div>
+            `).join('');
+        }
+
+        window.addSetting = async function(type) {
+            const labels = {
+                position: '직급',
+                jobTitle: '직위',
+                location: '근무지',
+                employmentType: '고용형태'
+            };
+            
+            const value = prompt(`${labels[type]}을(를) 입력하세요:`);
+            if (!value) return;
+            
+            showLoading();
+            
+            const settingsDoc = await window.getDoc(window.doc(window.db, 'settings', 'master'));
+            const settings = settingsDoc.data();
+            
+            const key = type === 'position' ? 'positions' : 
+                       type === 'jobTitle' ? 'jobTitles' :
+                       type === 'location' ? 'locations' : 'employmentTypes';
+            
+            if (!settings[key].includes(value)) {
+                settings[key].push(value);
+                await window.setDoc(window.doc(window.db, 'settings', 'master'), settings);
+                renderSettings(settings);
+            } else {
+                alert('이미 존재하는 값입니다.');
+            }
+            
+            hideLoading();
+        }
+
+        window.deleteSettingItem = async function(type, index) {
+            if (!confirm('삭제하시겠습니까?')) return;
+            
+            showLoading();
+            
+            const settingsDoc = await window.getDoc(window.doc(window.db, 'settings', 'master'));
+            const settings = settingsDoc.data();
+            
+            const key = type === 'position' ? 'positions' : 
+                       type === 'jobTitle' ? 'jobTitles' :
+                       type === 'location' ? 'locations' : 'employmentTypes';
+            
+            settings[key].splice(index, 1);
+            await window.setDoc(window.doc(window.db, 'settings', 'master'), settings);
+            renderSettings(settings);
+            
+            hideLoading();
+        }
+
+        window.moveSettingItem = async function(type, index, direction) {
+            showLoading();
+            
+            const settingsDoc = await window.getDoc(window.doc(window.db, 'settings', 'master'));
+            const settings = settingsDoc.data();
+            
+            const key = 'positions';
+            const newIndex = index + direction;
+            
+            if (newIndex >= 0 && newIndex < settings[key].length) {
+                [settings[key][index], settings[key][newIndex]] = [settings[key][newIndex], settings[key][index]];
+                await window.setDoc(window.doc(window.db, 'settings', 'master'), settings);
+                renderSettings(settings);
             }
             
             hideLoading();
