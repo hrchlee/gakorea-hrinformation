@@ -142,16 +142,24 @@
         <!-- 임직원 명부 탭 -->
         <div id="roster-tab" class="layout" style="display: none;">
             <div class="main-content" style="padding: 30px;">
-                <h2 style="margin-bottom: 20px;">임직원 명부</h2>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h2>임직원 명부</h2>
+                    <button class="btn btn-primary" onclick="exportRoster()">📊 Excel 내보내기</button>
+                </div>
                 
                 <div style="margin-bottom: 20px; display: flex; gap: 10px; align-items: center;">
                     <select id="roster-company-filter" onchange="loadRoster()" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
                         <option value="">전체 법인</option>
                     </select>
-                    <select id="roster-dept-filter" onchange="loadRoster()" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
-                        <option value="">전체 부서</option>
+                    <select id="roster-location-filter" onchange="loadRoster()" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                        <option value="">전체 근무지</option>
                     </select>
-                    <button class="btn btn-primary" onclick="exportRoster()">📊 Excel 내보내기</button>
+                    <select id="roster-position-filter" onchange="loadRoster()" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                        <option value="">전체 직급</option>
+                    </select>
+                    <select id="roster-jobtitle-filter" onchange="loadRoster()" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                        <option value="">전체 직위</option>
+                    </select>
                 </div>
 
                 <div style="overflow-x: auto;">
@@ -164,6 +172,7 @@
                                 <th style="padding: 12px; border: 1px solid #ddd; font-size: 12px;">법인</th>
                                 <th style="padding: 12px; border: 1px solid #ddd; font-size: 12px;">부서</th>
                                 <th style="padding: 12px; border: 1px solid #ddd; font-size: 12px;">직급</th>
+                                <th style="padding: 12px; border: 1px solid #ddd; font-size: 12px;">직위</th>
                                 <th style="padding: 12px; border: 1px solid #ddd; font-size: 12px;">입사일</th>
                                 <th style="padding: 12px; border: 1px solid #ddd; font-size: 12px;">재직상태</th>
                                 <th style="padding: 12px; border: 1px solid #ddd; font-size: 12px;">휴대전화</th>
@@ -172,7 +181,7 @@
                         </thead>
                         <tbody id="roster-tbody">
                             <tr>
-                                <td colspan="10" style="padding: 40px; text-align: center; color: #999;">데이터가 없습니다</td>
+                                <td colspan="11" style="padding: 40px; text-align: center; color: #999;">데이터가 없습니다</td>
                             </tr>
                         </tbody>
                     </table>
@@ -983,7 +992,8 @@
                 const deptMap = {};
                 deptsSnap.forEach(doc => {
                     const d = doc.data();
-                    deptMap[d.name + '_' + d.location] = d.code;
+                    // 부서명만으로 매핑 (근무지 조합 제거)
+                    deptMap[d.name] = d.code;
                 });
 
                 let successCount = 0;
@@ -994,9 +1004,9 @@
                     const row = jsonData[i];
                     
                     try {
-                        // 필수 필드 검증
-                        if (!row['사번'] || !row['성명'] || !row['입사일']) {
-                            errors.push(`${i+2}행: 필수 항목 누락 (사번, 성명, 입사일)`);
+                        // 필수 필드 검증 (사번, 성명만 필수)
+                        if (!row['사번'] || !row['성명']) {
+                            errors.push(`${i+2}행: 필수 항목 누락 (사번, 성명)`);
                             errorCount++;
                             continue;
                         }
@@ -1004,17 +1014,16 @@
                         // 법인 코드 찾기
                         const companyCode = companyMap[row['법인']] || 'C001';
                         
-                        // 부서 코드 찾기 (부서명 + 근무지)
-                        const deptKey = (row['부서'] || '') + '_' + (row['근무지'] || '');
-                        const departmentCode = deptMap[deptKey] || '';
+                        // 부서 코드 찾기
+                        const departmentCode = deptMap[row['부서']] || '';
 
-                        // 데이터 매핑
+                        // 데이터 매핑 (있는 값만 저장)
                         const employeeData = {
-                            employeeId: String(row['사번']),
-                            name: row['성명'],
+                            employeeId: String(row['사번']).trim(),
+                            name: row['성명'] || '',
                             nameEn: row['영문명'] || '',
                             nationality: row['내외국인'] || '내국인',
-                            gender: row['성별'] || '남성',
+                            gender: row['성별'] || '',
                             birthDate: row['생년월일'] || '',
                             residentNumber: row['주민등록번호'] || '',
                             mobile: row['휴대전화'] || '',
@@ -1040,7 +1049,7 @@
                             companyCode: companyCode,
                             workLocation: row['근무지'] || '',
                             departmentCode: departmentCode,
-                            employmentType: row['고용형태'] || '정규직',
+                            employmentType: row['고용형태'] || '',
                             position: row['직급'] || '',
                             jobTitle: row['직책'] || '',
                             jobRole: row['직무'] || '',
@@ -1095,7 +1104,9 @@
             showLoading();
             
             const companyFilter = document.getElementById('roster-company-filter').value;
-            const deptFilter = document.getElementById('roster-dept-filter').value;
+            const locationFilter = document.getElementById('roster-location-filter').value;
+            const positionFilter = document.getElementById('roster-position-filter').value;
+            const jobTitleFilter = document.getElementById('roster-jobtitle-filter').value;
             
             // 필터 옵션 로드
             const companiesSnap = await window.getDocs(window.collection(window.db, 'companies'));
@@ -1112,6 +1123,21 @@
                 depts[d.code] = d.name;
             });
             
+            // 직원 데이터 로드
+            const employeesSnap = await window.getDocs(window.collection(window.db, 'employees'));
+            let employees = [];
+            const locations = new Set();
+            const positions = new Set();
+            const jobTitles = new Set();
+            
+            employeesSnap.forEach(doc => {
+                const emp = doc.data();
+                employees.push(emp);
+                if (emp.workLocation) locations.add(emp.workLocation);
+                if (emp.position) positions.add(emp.position);
+                if (emp.jobTitle) jobTitles.add(emp.jobTitle);
+            });
+            
             // 법인 필터 업데이트
             const companySelect = document.getElementById('roster-company-filter');
             if (companySelect.options.length === 1) {
@@ -1123,12 +1149,47 @@
                 });
             }
             
-            // 직원 데이터 로드
-            const employeesSnap = await window.getDocs(window.collection(window.db, 'employees'));
-            let employees = [];
-            employeesSnap.forEach(doc => {
-                employees.push(doc.data());
-            });
+            // 근무지 필터 업데이트
+            const locationSelect = document.getElementById('roster-location-filter');
+            if (locationSelect.options.length === 1) {
+                Array.from(locations).sort().forEach(loc => {
+                    const option = document.createElement('option');
+                    option.value = loc;
+                    option.textContent = loc;
+                    locationSelect.appendChild(option);
+                });
+            }
+            
+            // 직급 필터 업데이트
+            const positionSelect = document.getElementById('roster-position-filter');
+            if (positionSelect.options.length === 1) {
+                const positionOrder = ['인턴', '사원', '주임', '대리', '과장', '차장', '부장', '이사'];
+                const sortedPositions = Array.from(positions).sort((a, b) => {
+                    const idxA = positionOrder.indexOf(a);
+                    const idxB = positionOrder.indexOf(b);
+                    if (idxA === -1 && idxB === -1) return a.localeCompare(b);
+                    if (idxA === -1) return 1;
+                    if (idxB === -1) return -1;
+                    return idxA - idxB;
+                });
+                sortedPositions.forEach(pos => {
+                    const option = document.createElement('option');
+                    option.value = pos;
+                    option.textContent = pos;
+                    positionSelect.appendChild(option);
+                });
+            }
+            
+            // 직위 필터 업데이트
+            const jobTitleSelect = document.getElementById('roster-jobtitle-filter');
+            if (jobTitleSelect.options.length === 1) {
+                Array.from(jobTitles).sort().forEach(title => {
+                    const option = document.createElement('option');
+                    option.value = title;
+                    option.textContent = title;
+                    jobTitleSelect.appendChild(option);
+                });
+            }
             
             // 필터링
             if (companyFilter) {
@@ -1137,14 +1198,20 @@
                     employees = employees.filter(e => e.companyCode === companyFilter);
                 }
             }
-            if (deptFilter) {
-                employees = employees.filter(e => e.departmentCode === deptFilter);
+            if (locationFilter) {
+                employees = employees.filter(e => e.workLocation === locationFilter);
+            }
+            if (positionFilter) {
+                employees = employees.filter(e => e.position === positionFilter);
+            }
+            if (jobTitleFilter) {
+                employees = employees.filter(e => e.jobTitle === jobTitleFilter);
             }
             
             // 테이블 렌더링
             const tbody = document.getElementById('roster-tbody');
             if (employees.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="10" style="padding: 40px; text-align: center; color: #999;">데이터가 없습니다</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="11" style="padding: 40px; text-align: center; color: #999;">데이터가 없습니다</td></tr>';
             } else {
                 tbody.innerHTML = employees.map((emp, idx) => `
                     <tr style="border-bottom: 1px solid #eee;">
@@ -1154,6 +1221,7 @@
                         <td style="padding: 10px; border: 1px solid #ddd;">${companies[emp.companyCode] || '-'}</td>
                         <td style="padding: 10px; border: 1px solid #ddd;">${depts[emp.departmentCode] || '-'}</td>
                         <td style="padding: 10px; border: 1px solid #ddd;">${emp.position || '-'}</td>
+                        <td style="padding: 10px; border: 1px solid #ddd;">${emp.jobTitle || '-'}</td>
                         <td style="padding: 10px; border: 1px solid #ddd;">${emp.hireDate || '-'}</td>
                         <td style="padding: 10px; border: 1px solid #ddd;">${emp.workStatus || '-'}</td>
                         <td style="padding: 10px; border: 1px solid #ddd;">${emp.mobile || '-'}</td>
