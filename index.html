@@ -598,10 +598,18 @@
         }
 
         window.addEventListener('DOMContentLoaded', async function() {
+            console.log('✅ 페이지 로딩 시작');
             showLoading();
-            await initializeData();
-            // 초기 탭 로드
-            switchMainTab('employee-info');
+            try {
+                await initializeData();
+                console.log('✅ 데이터 초기화 완료');
+                // 초기 탭 로드
+                switchMainTab('employee-info');
+                console.log('✅ 초기 탭 로드 완료');
+            } catch (error) {
+                console.error('❌ 초기화 오류:', error);
+                alert('초기화 오류: ' + error.message);
+            }
             hideLoading();
         });
 
