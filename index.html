@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GA KOREA 인사관리시스템</title>
+    <!-- 버전: v2.0.3 - 2026-01-03 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script>
     // HTTPS 강제 리다이렉트
@@ -575,6 +576,7 @@
         }
 
         window.deleteSelectedEmployees = async function() {
+            console.log('✅ deleteSelectedEmployees 호출됨');
             const checkboxes = document.querySelectorAll('.employee-checkbox:checked');
             if (checkboxes.length === 0) {
                 alert('삭제할 직원을 선택해주세요.');
@@ -861,6 +863,7 @@
         }
 
         window.showNewEmployeeForm = function() {
+            console.log('✅ showNewEmployeeForm 호출됨');
             showEmployeeForm();
         }
 
@@ -1234,6 +1237,7 @@
 
         // ===== 엑셀 다운로드 (양식) =====
         window.downloadExcelTemplate = function() {
+            console.log('✅ downloadExcelTemplate 호출됨');
             const template = [
                 {
                     '근무지': '본사',
