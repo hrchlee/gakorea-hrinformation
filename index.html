@@ -312,6 +312,7 @@
                                 <option value="hireDate">입사일순</option>
                                 <option value="position">직급순</option>
                                 <option value="jobTitle">직위순</option>
+                                <option value="jobRole">직책순</option>
                                 <option value="department">부서순</option>
                                 <option value="location">근무지순</option>
                             </select>
@@ -1651,18 +1652,28 @@
             // 정렬 기준 적용
             const settingsDoc = await window.getDoc(window.doc(window.db, 'settings', 'master'));
             let sortBy = 'name'; // 기본값
-            if (settingsDoc.exists() && settingsDoc.data().rosterSortBy) {
-                sortBy = settingsDoc.data().rosterSortBy;
+            let settings = {
+                positions: [],
+                jobTitles: [],
+                jobRoles: []
+            };
+            
+            if (settingsDoc.exists()) {
+                settings = settingsDoc.data();
+                if (settings.rosterSortBy) {
+                    sortBy = settings.rosterSortBy;
+                }
             }
             
             // 정렬
-            const positionOrder = ['인턴', '사원', '주임', '대리', '과장', '차장', '부장', '이사'];
             employees.sort((a, b) => {
                 if (sortBy === 'name') {
                     return (a.name || '').localeCompare(b.name || '');
                 } else if (sortBy === 'hireDate') {
                     return (a.hireDate || '').localeCompare(b.hireDate || '');
                 } else if (sortBy === 'position') {
+                    // 시스템 설정의 직급 순서 사용
+                    const positionOrder = settings.positions || [];
                     const idxA = positionOrder.indexOf(a.position || '');
                     const idxB = positionOrder.indexOf(b.position || '');
                     if (idxA === -1 && idxB === -1) return (a.position || '').localeCompare(b.position || '');
@@ -1670,7 +1681,23 @@
                     if (idxB === -1) return -1;
                     return idxA - idxB;
                 } else if (sortBy === 'jobTitle') {
-                    return (a.jobTitle || '').localeCompare(b.jobTitle || '');
+                    // 시스템 설정의 직위 순서 사용
+                    const jobTitleOrder = settings.jobTitles || [];
+                    const idxA = jobTitleOrder.indexOf(a.jobTitle || '');
+                    const idxB = jobTitleOrder.indexOf(b.jobTitle || '');
+                    if (idxA === -1 && idxB === -1) return (a.jobTitle || '').localeCompare(b.jobTitle || '');
+                    if (idxA === -1) return 1;
+                    if (idxB === -1) return -1;
+                    return idxA - idxB;
+                } else if (sortBy === 'jobRole') {
+                    // 시스템 설정의 직책 순서 사용
+                    const jobRoleOrder = settings.jobRoles || [];
+                    const idxA = jobRoleOrder.indexOf(a.jobRole || '');
+                    const idxB = jobRoleOrder.indexOf(b.jobRole || '');
+                    if (idxA === -1 && idxB === -1) return (a.jobRole || '').localeCompare(b.jobRole || '');
+                    if (idxA === -1) return 1;
+                    if (idxB === -1) return -1;
+                    return idxA - idxB;
                 } else if (sortBy === 'department') {
                     return (depts[a.departmentCode] || '').localeCompare(depts[b.departmentCode] || '');
                 } else if (sortBy === 'location') {
