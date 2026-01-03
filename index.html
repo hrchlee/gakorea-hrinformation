@@ -197,6 +197,7 @@
                                 <th style="padding: 6px 8px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">성별</th>
                                 <th style="padding: 6px 8px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">최초입사일</th>
                                 <th style="padding: 6px 8px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">근속기간</th>
+                                <th style="padding: 6px 8px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">연봉</th>
                                 <th style="padding: 6px 8px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">최종학력</th>
                                 <th style="padding: 6px 8px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">연락처</th>
                                 <th style="padding: 6px 8px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">이메일</th>
@@ -205,7 +206,7 @@
                         </thead>
                         <tbody id="roster-tbody">
                             <tr>
-                                <td colspan="18" style="padding: 40px; text-align: center; color: #999;">데이터가 없습니다</td>
+                                <td colspan="19" style="padding: 40px; text-align: center; color: #999;">데이터가 없습니다</td>
                             </tr>
                         </tbody>
                     </table>
@@ -310,6 +311,7 @@
                                 <option value="name">이름순</option>
                                 <option value="hireDate">입사일순</option>
                                 <option value="position">직급순</option>
+                                <option value="jobTitle">직위순</option>
                                 <option value="department">부서순</option>
                                 <option value="location">근무지순</option>
                             </select>
@@ -1091,24 +1093,14 @@
                                 <td>
                                     <select name="employmentType" required>
                                         <option value="">선택</option>
-                                        <option value="정규직" ${emp?.employmentType === '정규직' ? 'selected' : ''}>정규직</option>
-                                        <option value="계약직" ${emp?.employmentType === '계약직' ? 'selected' : ''}>계약직</option>
-                                        <option value="인턴" ${emp?.employmentType === '인턴' ? 'selected' : ''}>인턴</option>
-                                        <option value="파견직" ${emp?.employmentType === '파견직' ? 'selected' : ''}>파견직</option>
+                                        ${(settings.employmentTypes || []).map(type => `<option value="${type}" ${emp?.employmentType === type ? 'selected' : ''}>${type}</option>`).join('')}
                                     </select>
                                 </td>
                                 <th class="required">직급</th>
                                 <td>
                                     <select name="position" required>
                                         <option value="">선택</option>
-                                        <option value="인턴" ${emp?.position === '인턴' ? 'selected' : ''}>인턴</option>
-                                        <option value="사원" ${emp?.position === '사원' ? 'selected' : ''}>사원</option>
-                                        <option value="주임" ${emp?.position === '주임' ? 'selected' : ''}>주임</option>
-                                        <option value="대리" ${emp?.position === '대리' ? 'selected' : ''}>대리</option>
-                                        <option value="과장" ${emp?.position === '과장' ? 'selected' : ''}>과장</option>
-                                        <option value="차장" ${emp?.position === '차장' ? 'selected' : ''}>차장</option>
-                                        <option value="부장" ${emp?.position === '부장' ? 'selected' : ''}>부장</option>
-                                        <option value="이사" ${emp?.position === '이사' ? 'selected' : ''}>이사</option>
+                                        ${(settings.positions || []).map(pos => `<option value="${pos}" ${emp?.position === pos ? 'selected' : ''}>${pos}</option>`).join('')}
                                     </select>
                                 </td>
                             </tr>
@@ -1677,6 +1669,8 @@
                     if (idxA === -1) return 1;
                     if (idxB === -1) return -1;
                     return idxA - idxB;
+                } else if (sortBy === 'jobTitle') {
+                    return (a.jobTitle || '').localeCompare(b.jobTitle || '');
                 } else if (sortBy === 'department') {
                     return (depts[a.departmentCode] || '').localeCompare(depts[b.departmentCode] || '');
                 } else if (sortBy === 'location') {
@@ -1688,7 +1682,7 @@
             // 테이블 렌더링
             const tbody = document.getElementById('roster-tbody');
             if (employees.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="18" style="padding: 40px; text-align: center; color: #999;">데이터가 없습니다</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="19" style="padding: 40px; text-align: center; color: #999;">데이터가 없습니다</td></tr>';
             } else {
                 tbody.innerHTML = employees.map((emp, index) => {
                     // 나이 계산
@@ -1703,6 +1697,9 @@
                         const months = today.getMonth() - hireDate.getMonth();
                         tenure = `${years}년 ${months}개월`;
                     }
+                    
+                    // 연봉 포맷팅 (천 단위 콤마)
+                    const salary = emp.annualSalary ? Number(emp.annualSalary).toLocaleString() : '-';
                     
                     return `
                     <tr style="border-bottom: 1px solid #eee;">
@@ -1720,6 +1717,7 @@
                         <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; text-align: center; white-space: nowrap;">${emp.gender || '-'}</td>
                         <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">${emp.hireDate || '-'}</td>
                         <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">${tenure}</td>
+                        <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; text-align: right; white-space: nowrap;">${salary}</td>
                         <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">${emp.education || '-'}</td>
                         <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">${emp.mobile || '-'}</td>
                         <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">${emp.companyEmail || emp.personalEmail || '-'}</td>
