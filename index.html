@@ -183,6 +183,7 @@
                     <table id="roster-table" style="width: 100%; border-collapse: collapse; background: white; box-shadow: 0 1px 3px rgba(0,0,0,0.1); font-size: 11px;">
                         <thead style="background: #f5f5f5;">
                             <tr>
+                                <th style="padding: 6px 8px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap; width: 40px;">No</th>
                                 <th style="padding: 6px 8px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">근무지</th>
                                 <th style="padding: 6px 8px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">부서</th>
                                 <th style="padding: 6px 8px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">성명</th>
@@ -204,7 +205,7 @@
                         </thead>
                         <tbody id="roster-tbody">
                             <tr>
-                                <td colspan="17" style="padding: 40px; text-align: center; color: #999;">데이터가 없습니다</td>
+                                <td colspan="18" style="padding: 40px; text-align: center; color: #999;">데이터가 없습니다</td>
                             </tr>
                         </tbody>
                     </table>
@@ -299,6 +300,21 @@
                         <h3 style="margin-bottom: 15px; color: #1976d2;">고용형태 설정</h3>
                         <div id="employmenttype-list" style="margin-bottom: 15px; max-height: 200px; overflow-y: auto;"></div>
                         <button class="btn btn-outline" onclick="addSetting('employmentType')" style="width: 100%; padding: 8px;">+ 고용형태 추가</button>
+                    </div>
+
+                    <!-- 명부 정렬 기준 설정 -->
+                    <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                        <h3 style="margin-bottom: 15px; color: #1976d2;">임직원 명부 정렬 기준</h3>
+                        <div style="margin-bottom: 15px;">
+                            <select id="roster-sort-setting" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                                <option value="name">이름순</option>
+                                <option value="hireDate">입사일순</option>
+                                <option value="position">직급순</option>
+                                <option value="department">부서순</option>
+                                <option value="location">근무지순</option>
+                            </select>
+                        </div>
+                        <button class="btn btn-primary" onclick="saveRosterSortSetting()" style="width: 100%; padding: 8px;">저장</button>
                     </div>
                 </div>
 
@@ -883,6 +899,16 @@
             const dSnap = await window.getDocs(window.collection(window.db, 'departments'));
             dSnap.forEach(doc => depts.push(doc.data()));
             
+            // 설정값 로드
+            const settingsDoc = await window.getDoc(window.doc(window.db, 'settings', 'master'));
+            const settings = settingsDoc.exists() ? settingsDoc.data() : {
+                positions: [],
+                jobTitles: [],
+                jobRoles: [],
+                locations: [],
+                employmentTypes: []
+            };
+            
             document.getElementById('employee-detail').innerHTML = `
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                     <h2>${emp ? '직원 정보 수정' : '신규 직원 등록'}</h2>
@@ -1087,10 +1113,24 @@
                                 </td>
                             </tr>
                             <tr>
+                                <th>직위</th>
+                                <td>
+                                    <select name="jobTitle">
+                                        <option value="">선택</option>
+                                        ${(settings.jobTitles || []).map(jt => `<option value="${jt}" ${emp?.jobTitle === jt ? 'selected' : ''}>${jt}</option>`).join('')}
+                                    </select>
+                                </td>
                                 <th>직책</th>
-                                <td><input name="jobTitle" value="${emp?.jobTitle || ''}"></td>
+                                <td>
+                                    <select name="jobRole">
+                                        <option value="">선택</option>
+                                        ${(settings.jobRoles || []).map(jr => `<option value="${jr}" ${emp?.jobRole === jr ? 'selected' : ''}>${jr}</option>`).join('')}
+                                    </select>
+                                </td>
+                            </tr>
+                            <tr>
                                 <th>직무</th>
-                                <td><input name="jobRole" value="${emp?.jobRole || ''}"></td>
+                                <td colspan="3"><input name="duty" value="${emp?.duty || ''}"></td>
                             </tr>
                             <tr>
                                 <th>근무형태</th>
@@ -1616,12 +1656,41 @@
                 employees = employees.filter(e => e.jobTitle === jobTitleFilter);
             }
             
+            // 정렬 기준 적용
+            const settingsDoc = await window.getDoc(window.doc(window.db, 'settings', 'master'));
+            let sortBy = 'name'; // 기본값
+            if (settingsDoc.exists() && settingsDoc.data().rosterSortBy) {
+                sortBy = settingsDoc.data().rosterSortBy;
+            }
+            
+            // 정렬
+            const positionOrder = ['인턴', '사원', '주임', '대리', '과장', '차장', '부장', '이사'];
+            employees.sort((a, b) => {
+                if (sortBy === 'name') {
+                    return (a.name || '').localeCompare(b.name || '');
+                } else if (sortBy === 'hireDate') {
+                    return (a.hireDate || '').localeCompare(b.hireDate || '');
+                } else if (sortBy === 'position') {
+                    const idxA = positionOrder.indexOf(a.position || '');
+                    const idxB = positionOrder.indexOf(b.position || '');
+                    if (idxA === -1 && idxB === -1) return (a.position || '').localeCompare(b.position || '');
+                    if (idxA === -1) return 1;
+                    if (idxB === -1) return -1;
+                    return idxA - idxB;
+                } else if (sortBy === 'department') {
+                    return (depts[a.departmentCode] || '').localeCompare(depts[b.departmentCode] || '');
+                } else if (sortBy === 'location') {
+                    return (a.workLocation || '').localeCompare(b.workLocation || '');
+                }
+                return 0;
+            });
+            
             // 테이블 렌더링
             const tbody = document.getElementById('roster-tbody');
             if (employees.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="17" style="padding: 40px; text-align: center; color: #999;">데이터가 없습니다</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="18" style="padding: 40px; text-align: center; color: #999;">데이터가 없습니다</td></tr>';
             } else {
-                tbody.innerHTML = employees.map((emp) => {
+                tbody.innerHTML = employees.map((emp, index) => {
                     // 나이 계산
                     const age = emp.birthDate ? new Date().getFullYear() - new Date(emp.birthDate).getFullYear() : '-';
                     
@@ -1637,6 +1706,7 @@
                     
                     return `
                     <tr style="border-bottom: 1px solid #eee;">
+                        <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; text-align: center; white-space: nowrap;">${index + 1}</td>
                         <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">${emp.workLocation || '-'}</td>
                         <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">${depts[emp.departmentCode] || '-'}</td>
                         <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; font-weight: bold; white-space: nowrap;">${emp.name || '-'}</td>
@@ -1863,6 +1933,15 @@
             // 설정값 로드
             await loadSettings();
             
+            // 정렬 기준 로드
+            const settingsDoc = await window.getDoc(window.doc(window.db, 'settings', 'master'));
+            if (settingsDoc.exists()) {
+                const settings = settingsDoc.data();
+                if (settings.rosterSortBy) {
+                    document.getElementById('roster-sort-setting').value = settings.rosterSortBy;
+                }
+            }
+            
             // 관리자 계정 로드
             const usersSnap = await window.getDocs(window.collection(window.db, 'users'));
             const users = [];
@@ -2030,6 +2109,23 @@
             }
             
             hideLoading();
+        }
+
+
+        window.saveRosterSortSetting = async function() {
+            const sortBy = document.getElementById('roster-sort-setting').value;
+            
+            showLoading();
+            
+            const settingsDoc = await window.getDoc(window.doc(window.db, 'settings', 'master'));
+            const settings = settingsDoc.exists() ? settingsDoc.data() : {};
+            
+            settings.rosterSortBy = sortBy;
+            
+            await window.setDoc(window.doc(window.db, 'settings', 'master'), settings);
+            
+            hideLoading();
+            alert('정렬 기준이 저장되었습니다.');
         }
 
         window.showAddAdminForm = function() {
