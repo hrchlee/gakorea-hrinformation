@@ -1236,49 +1236,31 @@
         window.downloadExcelTemplate = function() {
             const template = [
                 {
-                    '사번': '26011001',
-                    '성명': '홍길동',
-                    '영문명': 'Hong Gil Dong',
-                    '내외국인': '내국인',
-                    '성별': '남성',
-                    '생년월일': '1990-01-01',
-                    '주민등록번호': '900101-1234567',
-                    '휴대전화': '010-1234-5678',
-                    '전화번호': '02-1234-5678',
-                    '주소': '서울시 강남구',
-                    '이메일(회사)': 'hong@gakorea.com',
-                    '이메일(개인)': 'hong@email.com',
-                    '은행명': '신한은행',
-                    '계좌번호': '110-123-456789',
-                    '예금주': '홍길동',
-                    '최종학력': '대졸',
-                    '학교명': 'OO대학교',
-                    '전공': '경영학',
-                    '졸업일': '2012-02-28',
-                    '결혼여부': '기혼',
-                    '자녀수': '2',
-                    '비상연락처': '010-9876-5432',
-                    '비상연락처관계': '배우자',
-                    '입사일': '2020-01-01',
-                    '그룹입사일': '2020-01-01',
-                    '퇴사일': '',
-                    '재직상태': '재직',
-                    '법인': 'GA KOREA',
                     '근무지': '본사',
                     '부서': '인사팀',
-                    '고용형태': '정규직',
+                    '성명': '홍길동',
+                    '직위': '팀원',
                     '직급': '대리',
-                    '직책': '팀원',
                     '직무': '인사관리',
-                    '근무형태': '주5일',
-                    '급여등급': 'G3',
-                    '기본급': '3000000',
+                    '소속법인(급여기준)': 'GA KOREA',
+                    '주민등록번호': '900101-1234567',
+                    '계약기간': '2020-01-01 ~ 2025-12-31',
+                    '생년월일': '1990-01-01',
+                    '나이(만)': '34',
+                    '정년도래': '2055-01-01',
+                    '성별': '남성',
                     '연봉': '40000000',
-                    '국민연금': 'O',
-                    '건강보험': 'O',
-                    '고용보험': 'O',
-                    '산재보험': 'O',
-                    '비고': ''
+                    '최초입사일': '2020-01-01',
+                    '근속기간': '4년 0개월',
+                    '최종승진일': '2022-01-01',
+                    '비고': '',
+                    '상벌': '',
+                    '현직위체류기간': '2년',
+                    '최종학력': '대졸',
+                    '연락처': '010-1234-5678',
+                    '이메일': 'hong@gakorea.com',
+                    '급여계좌': '신한은행 110-123-456789',
+                    '집주소': '서울시 강남구'
                 }
             ];
 
@@ -1287,17 +1269,16 @@
             
             // 컬럼 너비 설정
             ws['!cols'] = [
-                {wch: 12}, {wch: 10}, {wch: 15}, {wch: 10}, {wch: 8},
-                {wch: 12}, {wch: 18}, {wch: 15}, {wch: 15}, {wch: 30},
-                {wch: 20}, {wch: 20}, {wch: 12}, {wch: 18}, {wch: 10},
-                {wch: 10}, {wch: 15}, {wch: 12}, {wch: 12}, {wch: 10},
-                {wch: 8}, {wch: 15}, {wch: 12}, {wch: 12}, {wch: 12},
-                {wch: 12}, {wch: 10}, {wch: 15}, {wch: 12}, {wch: 12},
-                {wch: 10}, {wch: 10}, {wch: 10}, {wch: 10}, {wch: 12},
-                {wch: 12}, {wch: 12}, {wch: 12}, {wch: 10}, {wch: 10},
-                {wch: 10}, {wch: 10}, {wch: 30}
+                {wch: 12}, {wch: 15}, {wch: 10}, {wch: 10}, {wch: 10},
+                {wch: 12}, {wch: 20}, {wch: 18}, {wch: 25}, {wch: 12},
+                {wch: 10}, {wch: 12}, {wch: 8}, {wch: 12}, {wch: 12},
+                {wch: 15}, {wch: 12}, {wch: 20}, {wch: 15}, {wch: 15},
+                {wch: 12}, {wch: 15}, {wch: 25}, {wch: 30}, {wch: 30}
             ];
             
+            XLSX.utils.book_append_sheet(wb, ws, '인사정보');
+            XLSX.writeFile(wb, 'GA_KOREA_인사정보_양식.xlsx');
+        }
             XLSX.utils.book_append_sheet(wb, ws, '직원목록');
             XLSX.writeFile(wb, '직원등록_양식.xlsx');
         }
@@ -1366,8 +1347,9 @@
                 // 신규 법인 자동 생성
                 const newCompanies = new Set();
                 for (const row of jsonData) {
-                    if (row['법인'] && !companyNameToCode[row['법인']]) {
-                        newCompanies.add(row['법인']);
+                    const companyName = row['소속법인(급여기준)'] || row['소속법인'] || row['법인'];
+                    if (companyName && !companyNameToCode[companyName]) {
+                        newCompanies.add(companyName);
                     }
                 }
 
@@ -1402,36 +1384,52 @@
                     const row = jsonData[i];
                     
                     try {
-                        // 필수 필드 검증 (사번, 성명만 필수)
-                        if (!row['사번'] || !row['성명']) {
-                            errors.push(`${i+2}행: 필수 항목 누락 (사번, 성명)`);
+                        // 필수 필드 검증 (성명만 필수)
+                        if (!row['성명']) {
+                            errors.push(`${i+2}행: 필수 항목 누락 (성명)`);
                             errorCount++;
                             continue;
                         }
 
+                        // 사번 생성 (없으면 자동 생성)
+                        let employeeId = row['사번'] || generateEmployeeId();
+                        
                         // 법인 코드 찾기
-                        const companyCode = companyNameToCode[row['법인']] || 'C001';
+                        const companyCode = companyNameToCode[row['소속법인(급여기준)'] || row['소속법인']] || 'C001';
                         
                         // 부서 코드 찾기
                         const departmentCode = deptMap[row['부서']] || '';
 
-                        // 데이터 매핑 (있는 값만 저장)
+                        // 급여계좌 분리 (은행명 + 계좌번호)
+                        let bankName = '';
+                        let accountNumber = '';
+                        if (row['급여계좌']) {
+                            const accountParts = String(row['급여계좌']).split(' ');
+                            if (accountParts.length >= 2) {
+                                bankName = accountParts[0];
+                                accountNumber = accountParts.slice(1).join(' ');
+                            } else {
+                                accountNumber = row['급여계좌'];
+                            }
+                        }
+
+                        // 데이터 매핑 (인사정보 양식에 맞춤)
                         const employeeData = {
-                            employeeId: String(row['사번']).trim(),
+                            employeeId: String(employeeId).trim(),
                             name: row['성명'] || '',
                             nameEn: row['영문명'] || '',
                             nationality: row['내외국인'] || '내국인',
                             gender: row['성별'] || '',
                             birthDate: excelDateToJSDate(row['생년월일']),
                             residentNumber: row['주민등록번호'] || '',
-                            mobile: row['휴대전화'] || '',
+                            mobile: row['연락처'] || row['휴대전화'] || '',
                             phone: row['전화번호'] || '',
-                            address: row['주소'] || '',
-                            companyEmail: row['이메일(회사)'] || '',
+                            address: row['집주소'] || row['주소'] || '',
+                            companyEmail: row['이메일'] || row['이메일(회사)'] || '',
                             personalEmail: row['이메일(개인)'] || '',
-                            bankName: row['은행명'] || '',
-                            accountNumber: row['계좌번호'] || '',
-                            accountHolder: row['예금주'] || '',
+                            bankName: bankName,
+                            accountNumber: accountNumber,
+                            accountHolder: row['예금주'] || row['성명'] || '',
                             education: row['최종학력'] || '',
                             schoolName: row['학교명'] || '',
                             major: row['전공'] || '',
@@ -1440,7 +1438,7 @@
                             numberOfChildren: String(row['자녀수'] || '0'),
                             emergencyContact: row['비상연락처'] || '',
                             emergencyRelation: row['비상연락처관계'] || '',
-                            hireDate: excelDateToJSDate(row['입사일']),
+                            hireDate: excelDateToJSDate(row['최초입사일'] || row['입사일']),
                             groupHireDate: excelDateToJSDate(row['그룹입사일']),
                             resignDate: excelDateToJSDate(row['퇴사일']),
                             workStatus: row['재직상태'] || '재직',
@@ -1449,12 +1447,15 @@
                             departmentCode: departmentCode,
                             employmentType: row['고용형태'] || '',
                             position: row['직급'] || '',
-                            jobTitle: row['직책'] || '',
+                            jobTitle: row['직위'] || row['직책'] || '',
                             jobRole: row['직무'] || '',
                             workType: row['근무형태'] || '',
                             salaryGrade: row['급여등급'] || '',
                             baseSalary: String(row['기본급'] || ''),
-                            annualSalary: String(row['연봉'] || ''),
+                            annualSalary: String(row['연봉'] || '').replace(/,/g, ''),
+                            contractPeriod: row['계약기간'] || '',
+                            promotionDate: excelDateToJSDate(row['최종승진일']),
+                            rewards: row['상벌'] || '',
                             nationalPension: (row['국민연금'] === 'O' || row['국민연금'] === 'o'),
                             healthInsurance: (row['건강보험'] === 'O' || row['건강보험'] === 'o'),
                             employmentInsurance: (row['고용보험'] === 'O' || row['고용보험'] === 'o'),
@@ -1470,6 +1471,13 @@
                         errors.push(`${i+2}행: ${error.message}`);
                         errorCount++;
                     }
+                }
+
+                function generateEmployeeId() {
+                    const year = new Date().getFullYear().toString().slice(2);
+                    const month = String(new Date().getMonth() + 1).padStart(2, '0');
+                    const random = String(Math.floor(Math.random() * 10000)).padStart(4, '0');
+                    return year + month + random;
                 }
 
                 hideLoading();
