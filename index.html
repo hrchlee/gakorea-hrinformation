@@ -244,7 +244,8 @@
                     <select id="salary-position-filter" onchange="loadSalaryInfo()" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
                         <option value="">전체 직급</option>
                     </select>
-                    <button class="btn btn-primary" onclick="exportSalary()" style="margin-left: auto;">📊 Excel 내보내기</button>
+                    <button class="btn btn-primary" onclick="toggleSalaryEdit()" style="margin-left: auto;">✏️ 연봉정보 업데이트</button>
+                    <button class="btn btn-primary" onclick="exportSalary()">📊 Excel 내보내기</button>
                 </div>
 
                 <!-- 연봉정보 테이블 -->
@@ -259,7 +260,7 @@
                                 <th style="padding: 6px 8px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">입사일</th>
                                 <th style="padding: 6px 8px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">직위</th>
                                 <th style="padding: 6px 8px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">부서</th>
-                                <th style="padding: 6px 8px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">직무</th>
+                                <th style="padding: 6px 8px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">통상임금</th>
                                 <th style="padding: 6px 8px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">기본급</th>
                                 <th style="padding: 6px 8px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">차량보조비</th>
                                 <th style="padding: 6px 8px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">기타수당</th>
@@ -278,7 +279,7 @@
                         </thead>
                         <tbody id="salary-tbody">
                             <tr>
-                                <td colspan="22" style="padding: 40px; text-align: center; color: #999;">데이터가 없습니다</td>
+                                <td colspan="23" style="padding: 40px; text-align: center; color: #999;">데이터가 없습니다</td>
                             </tr>
                         </tbody>
                     </table>
@@ -370,8 +371,11 @@
                     <!-- 명부 정렬 기준 설정 -->
                     <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
                         <h3 style="margin-bottom: 15px; color: #1976d2;">임직원 명부 정렬 기준</h3>
-                        <div style="margin-bottom: 15px;">
-                            <select id="roster-sort-setting" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                        
+                        <div style="margin-bottom: 10px;">
+                            <label style="font-size: 12px; color: #666; display: block; margin-bottom: 5px;">정렬 기준 1 (1차)</label>
+                            <select id="roster-sort-1" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                                <option value="">선택 안 함</option>
                                 <option value="name">이름순</option>
                                 <option value="hireDate">입사일순</option>
                                 <option value="position">직급순</option>
@@ -381,6 +385,35 @@
                                 <option value="location">근무지순</option>
                             </select>
                         </div>
+                        
+                        <div style="margin-bottom: 10px;">
+                            <label style="font-size: 12px; color: #666; display: block; margin-bottom: 5px;">정렬 기준 2 (2차)</label>
+                            <select id="roster-sort-2" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                                <option value="">선택 안 함</option>
+                                <option value="name">이름순</option>
+                                <option value="hireDate">입사일순</option>
+                                <option value="position">직급순</option>
+                                <option value="jobTitle">직위순</option>
+                                <option value="jobRole">직책순</option>
+                                <option value="department">부서순</option>
+                                <option value="location">근무지순</option>
+                            </select>
+                        </div>
+                        
+                        <div style="margin-bottom: 15px;">
+                            <label style="font-size: 12px; color: #666; display: block; margin-bottom: 5px;">정렬 기준 3 (3차)</label>
+                            <select id="roster-sort-3" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                                <option value="">선택 안 함</option>
+                                <option value="name">이름순</option>
+                                <option value="hireDate">입사일순</option>
+                                <option value="position">직급순</option>
+                                <option value="jobTitle">직위순</option>
+                                <option value="jobRole">직책순</option>
+                                <option value="department">부서순</option>
+                                <option value="location">근무지순</option>
+                            </select>
+                        </div>
+                        
                         <button class="btn btn-primary" onclick="saveRosterSortSetting()" style="width: 100%; padding: 8px;">저장</button>
                     </div>
                 </div>
@@ -1720,58 +1753,93 @@
             
             // 정렬 기준 적용
             const settingsDoc = await window.getDoc(window.doc(window.db, 'settings', 'master'));
-            let sortBy = 'name'; // 기본값
             let settings = {
                 positions: [],
                 jobTitles: [],
-                jobRoles: []
+                jobRoles: [],
+                rosterSort: { sort1: 'name', sort2: '', sort3: '' }
             };
             
             if (settingsDoc.exists()) {
-                settings = settingsDoc.data();
-                if (settings.rosterSortBy) {
-                    sortBy = settings.rosterSortBy;
-                }
+                settings = { ...settings, ...settingsDoc.data() };
             }
             
-            // 정렬
-            employees.sort((a, b) => {
-                if (sortBy === 'name') {
-                    return (a.name || '').localeCompare(b.name || '');
-                } else if (sortBy === 'hireDate') {
-                    return (a.hireDate || '').localeCompare(b.hireDate || '');
-                } else if (sortBy === 'position') {
-                    // 시스템 설정의 직급 순서 사용
-                    const positionOrder = settings.positions || [];
-                    const idxA = positionOrder.indexOf(a.position || '');
-                    const idxB = positionOrder.indexOf(b.position || '');
-                    if (idxA === -1 && idxB === -1) return (a.position || '').localeCompare(b.position || '');
-                    if (idxA === -1) return 1;
-                    if (idxB === -1) return -1;
-                    return idxA - idxB;
-                } else if (sortBy === 'jobTitle') {
-                    // 시스템 설정의 직위 순서 사용
-                    const jobTitleOrder = settings.jobTitles || [];
-                    const idxA = jobTitleOrder.indexOf(a.jobTitle || '');
-                    const idxB = jobTitleOrder.indexOf(b.jobTitle || '');
-                    if (idxA === -1 && idxB === -1) return (a.jobTitle || '').localeCompare(b.jobTitle || '');
-                    if (idxA === -1) return 1;
-                    if (idxB === -1) return -1;
-                    return idxA - idxB;
-                } else if (sortBy === 'jobRole') {
-                    // 시스템 설정의 직책 순서 사용
-                    const jobRoleOrder = settings.jobRoles || [];
-                    const idxA = jobRoleOrder.indexOf(a.jobRole || '');
-                    const idxB = jobRoleOrder.indexOf(b.jobRole || '');
-                    if (idxA === -1 && idxB === -1) return (a.jobRole || '').localeCompare(b.jobRole || '');
-                    if (idxA === -1) return 1;
-                    if (idxB === -1) return -1;
-                    return idxA - idxB;
-                } else if (sortBy === 'department') {
-                    return (depts[a.departmentCode] || '').localeCompare(depts[b.departmentCode] || '');
-                } else if (sortBy === 'location') {
-                    return (a.workLocation || '').localeCompare(b.workLocation || '');
+            // 정렬 헬퍼 함수
+            const getSortValue = (emp, sortKey) => {
+                if (sortKey === 'name') {
+                    return (emp.name || '').localeCompare;
+                } else if (sortKey === 'hireDate') {
+                    return (emp.hireDate || '').localeCompare;
+                } else if (sortKey === 'position') {
+                    const order = settings.positions || [];
+                    const idx = order.indexOf(emp.position || '');
+                    return idx === -1 ? 999 : idx;
+                } else if (sortKey === 'jobTitle') {
+                    const order = settings.jobTitles || [];
+                    const idx = order.indexOf(emp.jobTitle || '');
+                    return idx === -1 ? 999 : idx;
+                } else if (sortKey === 'jobRole') {
+                    const order = settings.jobRoles || [];
+                    const idx = order.indexOf(emp.jobRole || '');
+                    return idx === -1 ? 999 : idx;
+                } else if (sortKey === 'department') {
+                    return (depts[emp.departmentCode] || '').localeCompare;
+                } else if (sortKey === 'location') {
+                    return (emp.workLocation || '').localeCompare;
                 }
+                return null;
+            };
+            
+            // 3단계 정렬
+            employees.sort((a, b) => {
+                const sortKeys = [
+                    settings.rosterSort?.sort1 || 'name',
+                    settings.rosterSort?.sort2 || '',
+                    settings.rosterSort?.sort3 || ''
+                ];
+                
+                for (const sortKey of sortKeys) {
+                    if (!sortKey) continue;
+                    
+                    let result = 0;
+                    
+                    if (sortKey === 'name') {
+                        result = (a.name || '').localeCompare(b.name || '');
+                    } else if (sortKey === 'hireDate') {
+                        result = (a.hireDate || '').localeCompare(b.hireDate || '');
+                    } else if (sortKey === 'position') {
+                        const order = settings.positions || [];
+                        const idxA = order.indexOf(a.position || '');
+                        const idxB = order.indexOf(b.position || '');
+                        if (idxA === -1 && idxB === -1) result = (a.position || '').localeCompare(b.position || '');
+                        else if (idxA === -1) result = 1;
+                        else if (idxB === -1) result = -1;
+                        else result = idxA - idxB;
+                    } else if (sortKey === 'jobTitle') {
+                        const order = settings.jobTitles || [];
+                        const idxA = order.indexOf(a.jobTitle || '');
+                        const idxB = order.indexOf(b.jobTitle || '');
+                        if (idxA === -1 && idxB === -1) result = (a.jobTitle || '').localeCompare(b.jobTitle || '');
+                        else if (idxA === -1) result = 1;
+                        else if (idxB === -1) result = -1;
+                        else result = idxA - idxB;
+                    } else if (sortKey === 'jobRole') {
+                        const order = settings.jobRoles || [];
+                        const idxA = order.indexOf(a.jobRole || '');
+                        const idxB = order.indexOf(b.jobRole || '');
+                        if (idxA === -1 && idxB === -1) result = (a.jobRole || '').localeCompare(b.jobRole || '');
+                        else if (idxA === -1) result = 1;
+                        else if (idxB === -1) result = -1;
+                        else result = idxA - idxB;
+                    } else if (sortKey === 'department') {
+                        result = (depts[a.departmentCode] || '').localeCompare(depts[b.departmentCode] || '');
+                    } else if (sortKey === 'location') {
+                        result = (a.workLocation || '').localeCompare(b.workLocation || '');
+                    }
+                    
+                    if (result !== 0) return result;
+                }
+                
                 return 0;
             });
             
@@ -1848,6 +1916,72 @@
         }
 
         // ===== 연봉정보 =====
+        let salaryEditMode = false;
+        
+        window.toggleSalaryEdit = function() {
+            if (!salaryEditMode) {
+                if (confirm('연봉 정보를 변경하시겠습니까?')) {
+                    salaryEditMode = true;
+                    loadSalaryInfo();
+                }
+            } else {
+                salaryEditMode = false;
+                loadSalaryInfo();
+            }
+        }
+        
+        // 수식 평가 함수
+        function evaluateFormula(formula, emp) {
+            if (!formula || !formula.startsWith('=')) {
+                return Number(formula || 0);
+            }
+            
+            try {
+                // 수식에서 = 제거
+                let expr = formula.substring(1).trim();
+                
+                // 변수 치환
+                expr = expr.replace(/통상임금/g, emp.regularWage || 0);
+                expr = expr.replace(/기본급/g, emp.baseSalary || 0);
+                expr = expr.replace(/시간/g, emp.overtimeHours || 0);
+                
+                // 간단한 수식 평가 (*, /, +, -)
+                return eval(expr);
+            } catch (e) {
+                console.error('수식 오류:', formula, e);
+                return 0;
+            }
+        }
+        
+        window.saveSalaryChanges = async function() {
+            showLoading();
+            
+            const table = document.getElementById('salary-table');
+            const rows = table.querySelectorAll('tbody tr');
+            
+            for (let row of rows) {
+                const empId = row.dataset.employeeId;
+                if (!empId) continue;
+                
+                const inputs = row.querySelectorAll('input');
+                const data = {};
+                
+                inputs.forEach(input => {
+                    const field = input.dataset.field;
+                    if (field) {
+                        data[field] = input.value;
+                    }
+                });
+                
+                await window.setDoc(window.doc(window.db, 'employees', empId), data, { merge: true });
+            }
+            
+            hideLoading();
+            alert('✅ 저장되었습니다!');
+            salaryEditMode = false;
+            loadSalaryInfo();
+        }
+        
         async function loadSalaryInfo() {
             showLoading();
             
@@ -1939,51 +2073,184 @@
                 employees = employees.filter(e => e.position === positionFilter);
             }
             
+            // 정렬 기준 적용 (임직원 명부와 동일)
+            const settingsDoc = await window.getDoc(window.doc(window.db, 'settings', 'master'));
+            let settings = {
+                positions: [],
+                jobTitles: [],
+                jobRoles: [],
+                rosterSort: { sort1: 'name', sort2: '', sort3: '' }
+            };
+            
+            if (settingsDoc.exists()) {
+                settings = { ...settings, ...settingsDoc.data() };
+            }
+            
+            // 3단계 정렬
+            employees.sort((a, b) => {
+                const sortKeys = [
+                    settings.rosterSort?.sort1 || 'name',
+                    settings.rosterSort?.sort2 || '',
+                    settings.rosterSort?.sort3 || ''
+                ];
+                
+                for (const sortKey of sortKeys) {
+                    if (!sortKey) continue;
+                    
+                    let result = 0;
+                    
+                    if (sortKey === 'name') {
+                        result = (a.name || '').localeCompare(b.name || '');
+                    } else if (sortKey === 'hireDate') {
+                        result = (a.hireDate || '').localeCompare(b.hireDate || '');
+                    } else if (sortKey === 'position') {
+                        const order = settings.positions || [];
+                        const idxA = order.indexOf(a.position || '');
+                        const idxB = order.indexOf(b.position || '');
+                        if (idxA === -1 && idxB === -1) result = (a.position || '').localeCompare(b.position || '');
+                        else if (idxA === -1) result = 1;
+                        else if (idxB === -1) result = -1;
+                        else result = idxA - idxB;
+                    } else if (sortKey === 'jobTitle') {
+                        const order = settings.jobTitles || [];
+                        const idxA = order.indexOf(a.jobTitle || '');
+                        const idxB = order.indexOf(b.jobTitle || '');
+                        if (idxA === -1 && idxB === -1) result = (a.jobTitle || '').localeCompare(b.jobTitle || '');
+                        else if (idxA === -1) result = 1;
+                        else if (idxB === -1) result = -1;
+                        else result = idxA - idxB;
+                    } else if (sortKey === 'jobRole') {
+                        const order = settings.jobRoles || [];
+                        const idxA = order.indexOf(a.jobRole || '');
+                        const idxB = order.indexOf(b.jobRole || '');
+                        if (idxA === -1 && idxB === -1) result = (a.jobRole || '').localeCompare(b.jobRole || '');
+                        else if (idxA === -1) result = 1;
+                        else if (idxB === -1) result = -1;
+                        else result = idxA - idxB;
+                    } else if (sortKey === 'department') {
+                        result = (depts[a.departmentCode] || '').localeCompare(depts[b.departmentCode] || '');
+                    } else if (sortKey === 'location') {
+                        result = (a.workLocation || '').localeCompare(b.workLocation || '');
+                    }
+                    
+                    if (result !== 0) return result;
+                }
+                
+                return 0;
+            });
+            
             // 테이블 렌더링
             const tbody = document.getElementById('salary-tbody');
             if (employees.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="22" style="padding: 40px; text-align: center; color: #999;">데이터가 없습니다</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="23" style="padding: 40px; text-align: center; color: #999;">데이터가 없습니다</td></tr>';
             } else {
                 tbody.innerHTML = employees.map((emp, index) => {
+                    // 통상임금
+                    const regularWage = Number(emp.regularWage || 0);
+                    
                     // 급여 계산
                     const baseSalary = Number(emp.baseSalary || 0);
                     const carAllowance = Number(emp.carAllowance || 0);
                     const otherAllowance = Number(emp.otherAllowance || 0);
-                    const overtimePay = Number(emp.overtimePay || 0);
-                    const holidayPay = Number(emp.holidayPay || 0);
-                    const nightPay = Number(emp.nightPay || 0);
+                    
+                    // 수식이 있으면 평가, 없으면 저장된 값 사용
+                    let overtimePay = 0;
+                    let holidayPay = 0;
+                    let nightPay = 0;
+                    
+                    if (emp.overtimePayFormula) {
+                        overtimePay = evaluateFormula(emp.overtimePayFormula, emp);
+                    } else {
+                        overtimePay = Number(emp.overtimePay || 0);
+                    }
+                    
+                    if (emp.holidayPayFormula) {
+                        holidayPay = evaluateFormula(emp.holidayPayFormula, emp);
+                    } else {
+                        holidayPay = Number(emp.holidayPay || 0);
+                    }
+                    
+                    if (emp.nightPayFormula) {
+                        nightPay = evaluateFormula(emp.nightPayFormula, emp);
+                    } else {
+                        nightPay = Number(emp.nightPay || 0);
+                    }
+                    
                     const fixedBonus = Number(emp.fixedBonus || 0);
                     
                     const monthlyTotal = baseSalary + carAllowance + otherAllowance + overtimePay + holidayPay + nightPay + fixedBonus;
                     const annualSalary = emp.annualSalary || (monthlyTotal * 12);
                     
-                    return `
-                    <tr style="border-bottom: 1px solid #eee;">
-                        <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; text-align: center; white-space: nowrap;">${index + 1}</td>
-                        <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">${emp.workLocation || '-'}</td>
-                        <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; font-weight: bold; white-space: nowrap;">${emp.name || '-'}</td>
-                        <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">${companies[emp.companyCode] || '-'}</td>
-                        <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">${emp.hireDate || '-'}</td>
-                        <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">${emp.jobTitle || '-'}</td>
-                        <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">${depts[emp.departmentCode] || '-'}</td>
-                        <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">${emp.duty || '-'}</td>
-                        <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; text-align: right; white-space: nowrap;">${baseSalary.toLocaleString()}</td>
-                        <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; text-align: right; white-space: nowrap;">${carAllowance.toLocaleString()}</td>
-                        <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; text-align: right; white-space: nowrap;">${otherAllowance.toLocaleString()}</td>
-                        <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; text-align: right; white-space: nowrap;">${overtimePay.toLocaleString()}</td>
-                        <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; text-align: right; white-space: nowrap;">${holidayPay.toLocaleString()}</td>
-                        <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; text-align: right; white-space: nowrap;">${nightPay.toLocaleString()}</td>
-                        <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; text-align: right; white-space: nowrap;">${fixedBonus.toLocaleString()}</td>
-                        <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; text-align: right; white-space: nowrap; font-weight: bold;">${monthlyTotal.toLocaleString()}</td>
-                        <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; text-align: right; white-space: nowrap; font-weight: bold;">${Number(annualSalary).toLocaleString()}</td>
-                        <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; text-align: right; white-space: nowrap;">${Number(emp.taxFree || 0).toLocaleString()}</td>
-                        <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; text-align: center; white-space: nowrap;">${emp.overtimeHours || '-'}</td>
-                        <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; text-align: center; white-space: nowrap;">${emp.holidayDays || '-'}</td>
-                        <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; text-align: center; white-space: nowrap;">${emp.holidayHours || '-'}</td>
-                        <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; text-align: center; white-space: nowrap;">${emp.nightHours || '-'}</td>
-                    </tr>
-                `;
+                    if (!salaryEditMode) {
+                        return `
+                        <tr style="border-bottom: 1px solid #eee;">
+                            <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; text-align: center; white-space: nowrap;">${index + 1}</td>
+                            <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">${emp.workLocation || '-'}</td>
+                            <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; font-weight: bold; white-space: nowrap;">${emp.name || '-'}</td>
+                            <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">${companies[emp.companyCode] || '-'}</td>
+                            <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">${emp.hireDate || '-'}</td>
+                            <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">${emp.jobTitle || '-'}</td>
+                            <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">${depts[emp.departmentCode] || '-'}</td>
+                            <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; text-align: right; white-space: nowrap;">${regularWage.toLocaleString()}</td>
+                            <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; text-align: right; white-space: nowrap;">${baseSalary.toLocaleString()}</td>
+                            <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; text-align: right; white-space: nowrap;">${carAllowance.toLocaleString()}</td>
+                            <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; text-align: right; white-space: nowrap;">${otherAllowance.toLocaleString()}</td>
+                            <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; text-align: right; white-space: nowrap;">${overtimePay.toLocaleString()}</td>
+                            <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; text-align: right; white-space: nowrap;">${holidayPay.toLocaleString()}</td>
+                            <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; text-align: right; white-space: nowrap;">${nightPay.toLocaleString()}</td>
+                            <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; text-align: right; white-space: nowrap;">${fixedBonus.toLocaleString()}</td>
+                            <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; text-align: right; white-space: nowrap; font-weight: bold;">${monthlyTotal.toLocaleString()}</td>
+                            <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; text-align: right; white-space: nowrap; font-weight: bold;">${Number(annualSalary).toLocaleString()}</td>
+                            <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; text-align: right; white-space: nowrap;">${Number(emp.taxFree || 0).toLocaleString()}</td>
+                            <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; text-align: center; white-space: nowrap;">${emp.overtimeHours || '-'}</td>
+                            <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; text-align: center; white-space: nowrap;">${emp.holidayDays || '-'}</td>
+                            <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; text-align: center; white-space: nowrap;">${emp.holidayHours || '-'}</td>
+                            <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; text-align: center; white-space: nowrap;">${emp.nightHours || '-'}</td>
+                        </tr>
+                    `;
+                    } else {
+                        // 편집 모드
+                        return `
+                        <tr style="border-bottom: 1px solid #eee;" data-employee-id="${emp.employeeId}">
+                            <td style="padding: 2px; border: 1px solid #ddd; font-size: 11px; text-align: center;">${index + 1}</td>
+                            <td style="padding: 2px; border: 1px solid #ddd; font-size: 11px;">${emp.workLocation || '-'}</td>
+                            <td style="padding: 2px; border: 1px solid #ddd; font-size: 11px; font-weight: bold;">${emp.name || '-'}</td>
+                            <td style="padding: 2px; border: 1px solid #ddd; font-size: 11px;">${companies[emp.companyCode] || '-'}</td>
+                            <td style="padding: 2px; border: 1px solid #ddd; font-size: 11px;">${emp.hireDate || '-'}</td>
+                            <td style="padding: 2px; border: 1px solid #ddd; font-size: 11px;">${emp.jobTitle || '-'}</td>
+                            <td style="padding: 2px; border: 1px solid #ddd; font-size: 11px;">${depts[emp.departmentCode] || '-'}</td>
+                            <td style="padding: 2px; border: 1px solid #ddd;"><input type="text" style="width: 80px; font-size: 11px; padding: 2px; text-align: right;" value="${regularWage}" data-field="regularWage"></td>
+                            <td style="padding: 2px; border: 1px solid #ddd;"><input type="text" style="width: 80px; font-size: 11px; padding: 2px; text-align: right;" value="${baseSalary}" data-field="baseSalary"></td>
+                            <td style="padding: 2px; border: 1px solid #ddd;"><input type="text" style="width: 80px; font-size: 11px; padding: 2px; text-align: right;" value="${carAllowance}" data-field="carAllowance"></td>
+                            <td style="padding: 2px; border: 1px solid #ddd;"><input type="text" style="width: 80px; font-size: 11px; padding: 2px; text-align: right;" value="${otherAllowance}" data-field="otherAllowance"></td>
+                            <td style="padding: 2px; border: 1px solid #ddd;"><input type="text" style="width: 100px; font-size: 11px; padding: 2px;" value="${emp.overtimePayFormula || overtimePay}" data-field="overtimePayFormula" placeholder="=수식 또는 값"></td>
+                            <td style="padding: 2px; border: 1px solid #ddd;"><input type="text" style="width: 100px; font-size: 11px; padding: 2px;" value="${emp.holidayPayFormula || holidayPay}" data-field="holidayPayFormula" placeholder="=수식 또는 값"></td>
+                            <td style="padding: 2px; border: 1px solid #ddd;"><input type="text" style="width: 100px; font-size: 11px; padding: 2px;" value="${emp.nightPayFormula || nightPay}" data-field="nightPayFormula" placeholder="=수식 또는 값"></td>
+                            <td style="padding: 2px; border: 1px solid #ddd;"><input type="text" style="width: 80px; font-size: 11px; padding: 2px; text-align: right;" value="${fixedBonus}" data-field="fixedBonus"></td>
+                            <td style="padding: 2px; border: 1px solid #ddd; font-size: 11px; text-align: right; font-weight: bold;">${monthlyTotal.toLocaleString()}</td>
+                            <td style="padding: 2px; border: 1px solid #ddd;"><input type="text" style="width: 90px; font-size: 11px; padding: 2px; text-align: right;" value="${annualSalary}" data-field="annualSalary"></td>
+                            <td style="padding: 2px; border: 1px solid #ddd;"><input type="text" style="width: 80px; font-size: 11px; padding: 2px; text-align: right;" value="${emp.taxFree || 0}" data-field="taxFree"></td>
+                            <td style="padding: 2px; border: 1px solid #ddd;"><input type="text" style="width: 50px; font-size: 11px; padding: 2px; text-align: center;" value="${emp.overtimeHours || ''}" data-field="overtimeHours"></td>
+                            <td style="padding: 2px; border: 1px solid #ddd;"><input type="text" style="width: 50px; font-size: 11px; padding: 2px; text-align: center;" value="${emp.holidayDays || ''}" data-field="holidayDays"></td>
+                            <td style="padding: 2px; border: 1px solid #ddd;"><input type="text" style="width: 50px; font-size: 11px; padding: 2px; text-align: center;" value="${emp.holidayHours || ''}" data-field="holidayHours"></td>
+                            <td style="padding: 2px; border: 1px solid #ddd;"><input type="text" style="width: 50px; font-size: 11px; padding: 2px; text-align: center;" value="${emp.nightHours || ''}" data-field="nightHours"></td>
+                        </tr>
+                    `;
+                    }
                 }).join('');
+                
+                // 편집 모드일 때 저장 버튼 추가
+                if (salaryEditMode) {
+                    const saveRow = `
+                        <tr>
+                            <td colspan="23" style="padding: 10px; text-align: center; background: #f5f5f5;">
+                                <button class="btn btn-primary" onclick="saveSalaryChanges()" style="margin-right: 10px;">💾 저장</button>
+                                <button class="btn btn-outline" onclick="toggleSalaryEdit()">❌ 취소</button>
+                            </td>
+                        </tr>
+                    `;
+                    tbody.innerHTML += saveRow;
+                }
             }
             
             hideLoading();
@@ -2194,8 +2461,10 @@
             const settingsDoc = await window.getDoc(window.doc(window.db, 'settings', 'master'));
             if (settingsDoc.exists()) {
                 const settings = settingsDoc.data();
-                if (settings.rosterSortBy) {
-                    document.getElementById('roster-sort-setting').value = settings.rosterSortBy;
+                if (settings.rosterSort) {
+                    document.getElementById('roster-sort-1').value = settings.rosterSort.sort1 || '';
+                    document.getElementById('roster-sort-2').value = settings.rosterSort.sort2 || '';
+                    document.getElementById('roster-sort-3').value = settings.rosterSort.sort3 || '';
                 }
             }
             
@@ -2370,14 +2639,20 @@
 
 
         window.saveRosterSortSetting = async function() {
-            const sortBy = document.getElementById('roster-sort-setting').value;
+            const sort1 = document.getElementById('roster-sort-1').value;
+            const sort2 = document.getElementById('roster-sort-2').value;
+            const sort3 = document.getElementById('roster-sort-3').value;
             
             showLoading();
             
             const settingsDoc = await window.getDoc(window.doc(window.db, 'settings', 'master'));
             const settings = settingsDoc.exists() ? settingsDoc.data() : {};
             
-            settings.rosterSortBy = sortBy;
+            settings.rosterSort = {
+                sort1: sort1,
+                sort2: sort2,
+                sort3: sort3
+            };
             
             await window.setDoc(window.doc(window.db, 'settings', 'master'), settings);
             
