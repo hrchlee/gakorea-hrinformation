@@ -235,20 +235,22 @@
                 
                 <!-- 필터 -->
                 <div style="display: flex; gap: 15px; margin-bottom: 20px; align-items: center;">
-                    <select id="salary-company-filter" onchange="loadSalaryInfo()" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                    <select id="salary-company-filter" onchange="filterSalaryInfo()" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
                         <option value="">전체 법인</option>
                     </select>
-                    <select id="salary-location-filter" onchange="loadSalaryInfo()" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                    <select id="salary-location-filter" onchange="filterSalaryInfo()" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
                         <option value="">전체 근무지</option>
                     </select>
-                    <select id="salary-position-filter" onchange="loadSalaryInfo()" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                    <select id="salary-position-filter" onchange="filterSalaryInfo()" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
                         <option value="">전체 직급</option>
                     </select>
                     <div style="margin-left: auto; display: flex; gap: 10px;">
                         <button class="btn btn-outline" onclick="downloadSalaryTemplate()">📥 연봉 양식 다운로드</button>
                         <button class="btn btn-primary" onclick="document.getElementById('salary-excel-upload').click()">📤 엑셀 업로드</button>
                         <input type="file" id="salary-excel-upload" accept=".xlsx,.xls" style="display: none;" onchange="handleSalaryExcelUpload(event)">
-                        <button class="btn btn-primary" onclick="saveSalaryChanges()">💾 저장</button>
+                        <button id="salary-edit-btn" class="btn btn-secondary" onclick="enableSalaryEdit()">✏️ 연봉정보 수정</button>
+                        <button id="salary-save-btn" class="btn btn-primary" onclick="saveSalaryChanges()" style="display: none;">💾 저장</button>
+                        <button id="salary-cancel-btn" class="btn btn-outline" onclick="cancelSalaryEdit()" style="display: none;">취소</button>
                         <button class="btn btn-primary" onclick="exportSalary()">📊 Excel 내보내기</button>
                     </div>
                 </div>
@@ -2073,87 +2075,156 @@
             
             hideLoading();
             alert('✅ 저장되었습니다!');
+            
+            // 수정 모드 종료
+            salaryEditMode = false;
+            document.getElementById('salary-edit-btn').style.display = '';
+            document.getElementById('salary-save-btn').style.display = 'none';
+            document.getElementById('salary-cancel-btn').style.display = 'none';
+            
+            loadSalaryInfo();
+        }
+        
+        // 연봉정보 수정 모드 상태
+        let salaryEditMode = false;
+        // 연봉정보 전체 데이터 저장 (필터용)
+        let allSalaryEmployees = [];
+        let salaryCompanies = {};
+        let salaryDepts = {};
+        let salarySettings = {};
+        
+        // 연봉정보 수정 모드 활성화
+        window.enableSalaryEdit = function() {
+            if (confirm('연봉을 수정하시겠습니까?')) {
+                salaryEditMode = true;
+                document.getElementById('salary-edit-btn').style.display = 'none';
+                document.getElementById('salary-save-btn').style.display = '';
+                document.getElementById('salary-cancel-btn').style.display = '';
+                
+                // 입력 필드 활성화
+                document.querySelectorAll('#salary-tbody input.salary-cell').forEach(input => {
+                    input.disabled = false;
+                    input.style.background = '#fff';
+                });
+            }
+        }
+        
+        // 연봉정보 수정 취소
+        window.cancelSalaryEdit = function() {
+            salaryEditMode = false;
+            document.getElementById('salary-edit-btn').style.display = '';
+            document.getElementById('salary-save-btn').style.display = 'none';
+            document.getElementById('salary-cancel-btn').style.display = 'none';
+            
+            // 데이터 다시 로드 (변경사항 취소)
             loadSalaryInfo();
         }
         
         async function loadSalaryInfo() {
             showLoading();
             
-            const companyFilter = document.getElementById('salary-company-filter').value;
-            const locationFilter = document.getElementById('salary-location-filter').value;
-            const positionFilter = document.getElementById('salary-position-filter').value;
-            
             // 법인 데이터 로드
             const companiesSnap = await window.getDocs(window.collection(window.db, 'companies'));
-            const companies = {};
+            salaryCompanies = {};
             companiesSnap.forEach(doc => {
                 const c = doc.data();
-                companies[c.code] = c.name;
+                salaryCompanies[c.code] = c.name;
             });
             
             // 부서 데이터 로드
             const deptsSnap = await window.getDocs(window.collection(window.db, 'departments'));
-            const depts = {};
+            salaryDepts = {};
             deptsSnap.forEach(doc => {
                 const d = doc.data();
-                depts[d.code] = d.name;
+                salaryDepts[d.code] = d.name;
             });
             
             // 직원 데이터 로드
             const employeesSnap = await window.getDocs(window.collection(window.db, 'employees'));
-            let employees = [];
+            allSalaryEmployees = [];
             const locations = new Set();
             const positions = new Set();
             
             employeesSnap.forEach(doc => {
                 const emp = doc.data();
-                emp.id = doc.id;  // ID 추가
-                employees.push(emp);
+                emp.id = doc.id;
+                allSalaryEmployees.push(emp);
                 if (emp.workLocation) locations.add(emp.workLocation);
                 if (emp.position) positions.add(emp.position);
             });
             
             // 법인 필터 업데이트
             const companySelect = document.getElementById('salary-company-filter');
-            if (companySelect.options.length === 1) {
-                Object.entries(companies).forEach(([code, name]) => {
-                    const option = document.createElement('option');
-                    option.value = code;
-                    option.textContent = name;
-                    companySelect.appendChild(option);
-                });
-            }
+            const currentCompanyValue = companySelect.value;
+            companySelect.innerHTML = '<option value="">전체 법인</option>';
+            Object.entries(salaryCompanies).forEach(([code, name]) => {
+                const option = document.createElement('option');
+                option.value = code;
+                option.textContent = name;
+                companySelect.appendChild(option);
+            });
+            companySelect.value = currentCompanyValue;
             
             // 근무지 필터 업데이트
             const locationSelect = document.getElementById('salary-location-filter');
-            if (locationSelect.options.length === 1) {
-                Array.from(locations).sort().forEach(loc => {
-                    const option = document.createElement('option');
-                    option.value = loc;
-                    option.textContent = loc;
-                    locationSelect.appendChild(option);
-                });
-            }
+            const currentLocationValue = locationSelect.value;
+            locationSelect.innerHTML = '<option value="">전체 근무지</option>';
+            Array.from(locations).sort().forEach(loc => {
+                const option = document.createElement('option');
+                option.value = loc;
+                option.textContent = loc;
+                locationSelect.appendChild(option);
+            });
+            locationSelect.value = currentLocationValue;
             
             // 직급 필터 업데이트
             const positionSelect = document.getElementById('salary-position-filter');
-            if (positionSelect.options.length === 1) {
-                const positionOrder = ['인턴', '사원', '주임', '대리', '과장', '차장', '부장', '이사'];
-                const sortedPositions = Array.from(positions).sort((a, b) => {
-                    const idxA = positionOrder.indexOf(a);
-                    const idxB = positionOrder.indexOf(b);
-                    if (idxA === -1 && idxB === -1) return a.localeCompare(b);
-                    if (idxA === -1) return 1;
-                    if (idxB === -1) return -1;
-                    return idxA - idxB;
-                });
-                sortedPositions.forEach(pos => {
-                    const option = document.createElement('option');
-                    option.value = pos;
-                    option.textContent = pos;
-                    positionSelect.appendChild(option);
-                });
+            const currentPositionValue = positionSelect.value;
+            positionSelect.innerHTML = '<option value="">전체 직급</option>';
+            const positionOrder = ['인턴', '사원', '주임', '대리', '과장', '차장', '부장', '이사'];
+            const sortedPositions = Array.from(positions).sort((a, b) => {
+                const idxA = positionOrder.indexOf(a);
+                const idxB = positionOrder.indexOf(b);
+                if (idxA === -1 && idxB === -1) return a.localeCompare(b);
+                if (idxA === -1) return 1;
+                if (idxB === -1) return -1;
+                return idxA - idxB;
+            });
+            sortedPositions.forEach(pos => {
+                const option = document.createElement('option');
+                option.value = pos;
+                option.textContent = pos;
+                positionSelect.appendChild(option);
+            });
+            positionSelect.value = currentPositionValue;
+            
+            // 정렬 설정 로드
+            const settingsDoc = await window.getDoc(window.doc(window.db, 'settings', 'master'));
+            salarySettings = {
+                positions: [],
+                jobTitles: [],
+                jobRoles: [],
+                locations: [],
+                rosterSort: { sort1: 'name', sort2: '', sort3: '' }
+            };
+            
+            if (settingsDoc.exists()) {
+                salarySettings = { ...salarySettings, ...settingsDoc.data() };
             }
+            
+            hideLoading();
+            
+            // 필터 적용하여 테이블 렌더링
+            filterSalaryInfo();
+        }
+        
+        // 필터 적용 함수 (별도 분리)
+        window.filterSalaryInfo = function() {
+            const companyFilter = document.getElementById('salary-company-filter').value;
+            const locationFilter = document.getElementById('salary-location-filter').value;
+            const positionFilter = document.getElementById('salary-position-filter').value;
+            
+            let employees = [...allSalaryEmployees];
             
             // 필터링
             if (companyFilter) {
@@ -2166,19 +2237,6 @@
             }
             if (positionFilter) {
                 employees = employees.filter(e => e.position === positionFilter);
-            }
-            
-            // 정렬 기준 적용 (임직원 명부와 동일)
-            const settingsDoc = await window.getDoc(window.doc(window.db, 'settings', 'master'));
-            let settings = {
-                positions: [],
-                jobTitles: [],
-                jobRoles: [],
-                rosterSort: { sort1: 'name', sort2: '', sort3: '' }
-            };
-            
-            if (settingsDoc.exists()) {
-                settings = { ...settings, ...settingsDoc.data() };
             }
             
             // 임원/자문/고문 우선 정렬
@@ -2195,9 +2253,9 @@
                 
                 // 2. 정렬 기준 적용
                 const sortKeys = [
-                    settings.rosterSort?.sort1 || 'name',
-                    settings.rosterSort?.sort2 || '',
-                    settings.rosterSort?.sort3 || ''
+                    salarySettings.rosterSort?.sort1 || 'name',
+                    salarySettings.rosterSort?.sort2 || '',
+                    salarySettings.rosterSort?.sort3 || ''
                 ];
                 
                 for (const sortKey of sortKeys) {
@@ -2210,7 +2268,7 @@
                     } else if (sortKey === 'hireDate') {
                         result = (a.hireDate || '').localeCompare(b.hireDate || '');
                     } else if (sortKey === 'position') {
-                        const order = settings.positions || [];
+                        const order = salarySettings.positions || [];
                         const idxA = order.indexOf(a.position || '');
                         const idxB = order.indexOf(b.position || '');
                         if (idxA === -1 && idxB === -1) result = (a.position || '').localeCompare(b.position || '');
@@ -2218,7 +2276,7 @@
                         else if (idxB === -1) result = -1;
                         else result = idxA - idxB;
                     } else if (sortKey === 'jobTitle') {
-                        const order = settings.jobTitles || [];
+                        const order = salarySettings.jobTitles || [];
                         const idxA = order.indexOf(a.jobTitle || '');
                         const idxB = order.indexOf(b.jobTitle || '');
                         if (idxA === -1 && idxB === -1) result = (a.jobTitle || '').localeCompare(b.jobTitle || '');
@@ -2226,7 +2284,7 @@
                         else if (idxB === -1) result = -1;
                         else result = idxA - idxB;
                     } else if (sortKey === 'jobRole') {
-                        const order = settings.jobRoles || [];
+                        const order = salarySettings.jobRoles || [];
                         const idxA = order.indexOf(a.jobRole || '');
                         const idxB = order.indexOf(b.jobRole || '');
                         if (idxA === -1 && idxB === -1) result = (a.jobRole || '').localeCompare(b.jobRole || '');
@@ -2234,10 +2292,9 @@
                         else if (idxB === -1) result = -1;
                         else result = idxA - idxB;
                     } else if (sortKey === 'department') {
-                        result = (depts[a.departmentCode] || '').localeCompare(depts[b.departmentCode] || '');
+                        result = (salaryDepts[a.departmentCode] || '').localeCompare(salaryDepts[b.departmentCode] || '');
                     } else if (sortKey === 'location') {
-                        // 시스템 관리자에서 설정한 근무지 순서대로 정렬
-                        const order = settings.locations || [];
+                        const order = salarySettings.locations || [];
                         const idxA = order.indexOf(a.workLocation || '');
                         const idxB = order.indexOf(b.workLocation || '');
                         if (idxA === -1 && idxB === -1) result = (a.workLocation || '').localeCompare(b.workLocation || '');
@@ -2252,10 +2309,17 @@
                 return 0;
             });
             
-            // 테이블 렌더링 (스프레드시트 스타일)
+            // 테이블 렌더링
+            renderSalaryTable(employees);
+        }
+        
+        // 테이블 렌더링 함수
+        function renderSalaryTable(employees) {
             const tbody = document.getElementById('salary-tbody');
+            const isEditMode = salaryEditMode;
+            
             if (employees.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="23" style="padding: 40px; text-align: center; color: #999;">데이터가 없습니다</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="22" style="padding: 40px; text-align: center; color: #999;">데이터가 없습니다</td></tr>';
             } else {
                 tbody.innerHTML = employees.map((emp, index) => {
                     // 숫자 값으로 변환
@@ -2271,36 +2335,39 @@
                     const monthlyTotal = baseSalary + carAllowance + otherAllowance + overtimePay + holidayPay + nightPay + fixedBonus;
                     const annualSalary = Number(emp.annualSalary) || (monthlyTotal * 12);
                     
+                    const inputStyle = isEditMode 
+                        ? 'background: #fff;' 
+                        : 'background: #f5f5f5; cursor: not-allowed;';
+                    const disabledAttr = isEditMode ? '' : 'disabled';
+                    
                     return `
                     <tr style="border-bottom: 1px solid #eee;" data-employee-id="${emp.id}">
                         <td style="padding: 4px; border: 1px solid #ddd; font-size: 11px; text-align: center; background: #f9f9f9;">${index + 1}</td>
                         <td style="padding: 4px; border: 1px solid #ddd; font-size: 11px; background: #f9f9f9;">${emp.workLocation || '-'}</td>
                         <td style="padding: 4px; border: 1px solid #ddd; font-size: 11px; font-weight: bold; background: #f9f9f9;">${emp.name || '-'}</td>
-                        <td style="padding: 4px; border: 1px solid #ddd; font-size: 11px; background: #f9f9f9;">${companies[emp.companyCode] || '-'}</td>
+                        <td style="padding: 4px; border: 1px solid #ddd; font-size: 11px; background: #f9f9f9;">${salaryCompanies[emp.companyCode] || '-'}</td>
                         <td style="padding: 4px; border: 1px solid #ddd; font-size: 11px; background: #f9f9f9;">${emp.hireDate || '-'}</td>
                         <td style="padding: 4px; border: 1px solid #ddd; font-size: 11px; background: #f9f9f9;">${emp.jobTitle || '-'}</td>
-                        <td style="padding: 4px; border: 1px solid #ddd; font-size: 11px; background: #f9f9f9;">${depts[emp.departmentCode] || '-'}</td>
-                        <td style="padding: 0; border: 1px solid #ddd;"><input type="number" class="salary-cell" style="width: 90px; font-size: 11px; padding: 4px; border: none; text-align: right;" value="${emp.regularWage || ''}" data-field="regularWage" onchange="updateSalaryCell('${emp.id}', 'regularWage', this.value)"></td>
-                        <td style="padding: 0; border: 1px solid #ddd;"><input type="number" class="salary-cell" style="width: 90px; font-size: 11px; padding: 4px; border: none; text-align: right;" value="${emp.baseSalary || ''}" data-field="baseSalary" onchange="updateSalaryCell('${emp.id}', 'baseSalary', this.value)"></td>
-                        <td style="padding: 0; border: 1px solid #ddd;"><input type="number" class="salary-cell" style="width: 90px; font-size: 11px; padding: 4px; border: none; text-align: right;" value="${emp.carAllowance || ''}" data-field="carAllowance" onchange="updateSalaryCell('${emp.id}', 'carAllowance', this.value)"></td>
-                        <td style="padding: 0; border: 1px solid #ddd;"><input type="number" class="salary-cell" style="width: 90px; font-size: 11px; padding: 4px; border: none; text-align: right;" value="${emp.otherAllowance || ''}" data-field="otherAllowance" onchange="updateSalaryCell('${emp.id}', 'otherAllowance', this.value)"></td>
-                        <td style="padding: 0; border: 1px solid #ddd;"><input type="number" class="salary-cell" style="width: 90px; font-size: 11px; padding: 4px; border: none; text-align: right;" value="${emp.overtimePay || ''}" data-field="overtimePay" onchange="updateSalaryCell('${emp.id}', 'overtimePay', this.value)"></td>
-                        <td style="padding: 0; border: 1px solid #ddd;"><input type="number" class="salary-cell" style="width: 90px; font-size: 11px; padding: 4px; border: none; text-align: right;" value="${emp.holidayPay || ''}" data-field="holidayPay" onchange="updateSalaryCell('${emp.id}', 'holidayPay', this.value)"></td>
-                        <td style="padding: 0; border: 1px solid #ddd;"><input type="number" class="salary-cell" style="width: 90px; font-size: 11px; padding: 4px; border: none; text-align: right;" value="${emp.nightPay || ''}" data-field="nightPay" onchange="updateSalaryCell('${emp.id}', 'nightPay', this.value)"></td>
-                        <td style="padding: 0; border: 1px solid #ddd;"><input type="number" class="salary-cell" style="width: 90px; font-size: 11px; padding: 4px; border: none; text-align: right;" value="${emp.fixedBonus || ''}" data-field="fixedBonus" onchange="updateSalaryCell('${emp.id}', 'fixedBonus', this.value)"></td>
+                        <td style="padding: 4px; border: 1px solid #ddd; font-size: 11px; background: #f9f9f9;">${salaryDepts[emp.departmentCode] || '-'}</td>
+                        <td style="padding: 0; border: 1px solid #ddd;"><input type="number" class="salary-cell" style="width: 90px; font-size: 11px; padding: 4px; border: none; text-align: right; ${inputStyle}" value="${emp.regularWage || ''}" data-field="regularWage" onchange="updateSalaryCell('${emp.id}', 'regularWage', this.value)" ${disabledAttr}></td>
+                        <td style="padding: 0; border: 1px solid #ddd;"><input type="number" class="salary-cell" style="width: 90px; font-size: 11px; padding: 4px; border: none; text-align: right; ${inputStyle}" value="${emp.baseSalary || ''}" data-field="baseSalary" onchange="updateSalaryCell('${emp.id}', 'baseSalary', this.value)" ${disabledAttr}></td>
+                        <td style="padding: 0; border: 1px solid #ddd;"><input type="number" class="salary-cell" style="width: 90px; font-size: 11px; padding: 4px; border: none; text-align: right; ${inputStyle}" value="${emp.carAllowance || ''}" data-field="carAllowance" onchange="updateSalaryCell('${emp.id}', 'carAllowance', this.value)" ${disabledAttr}></td>
+                        <td style="padding: 0; border: 1px solid #ddd;"><input type="number" class="salary-cell" style="width: 90px; font-size: 11px; padding: 4px; border: none; text-align: right; ${inputStyle}" value="${emp.otherAllowance || ''}" data-field="otherAllowance" onchange="updateSalaryCell('${emp.id}', 'otherAllowance', this.value)" ${disabledAttr}></td>
+                        <td style="padding: 0; border: 1px solid #ddd;"><input type="number" class="salary-cell" style="width: 90px; font-size: 11px; padding: 4px; border: none; text-align: right; ${inputStyle}" value="${emp.overtimePay || ''}" data-field="overtimePay" onchange="updateSalaryCell('${emp.id}', 'overtimePay', this.value)" ${disabledAttr}></td>
+                        <td style="padding: 0; border: 1px solid #ddd;"><input type="number" class="salary-cell" style="width: 90px; font-size: 11px; padding: 4px; border: none; text-align: right; ${inputStyle}" value="${emp.holidayPay || ''}" data-field="holidayPay" onchange="updateSalaryCell('${emp.id}', 'holidayPay', this.value)" ${disabledAttr}></td>
+                        <td style="padding: 0; border: 1px solid #ddd;"><input type="number" class="salary-cell" style="width: 90px; font-size: 11px; padding: 4px; border: none; text-align: right; ${inputStyle}" value="${emp.nightPay || ''}" data-field="nightPay" onchange="updateSalaryCell('${emp.id}', 'nightPay', this.value)" ${disabledAttr}></td>
+                        <td style="padding: 0; border: 1px solid #ddd;"><input type="number" class="salary-cell" style="width: 90px; font-size: 11px; padding: 4px; border: none; text-align: right; ${inputStyle}" value="${emp.fixedBonus || ''}" data-field="fixedBonus" onchange="updateSalaryCell('${emp.id}', 'fixedBonus', this.value)" ${disabledAttr}></td>
                         <td style="padding: 4px; border: 1px solid #ddd; font-size: 11px; text-align: right; font-weight: bold; background: #fffbcc;">${monthlyTotal.toLocaleString()}</td>
-                        <td style="padding: 0; border: 1px solid #ddd;"><input type="number" class="salary-cell" style="width: 100px; font-size: 11px; padding: 4px; border: none; text-align: right; font-weight: bold;" value="${emp.annualSalary || ''}" data-field="annualSalary" onchange="updateSalaryCell('${emp.id}', 'annualSalary', this.value)"></td>
-                        <td style="padding: 0; border: 1px solid #ddd;"><input type="number" class="salary-cell" style="width: 90px; font-size: 11px; padding: 4px; border: none; text-align: right;" value="${emp.taxFree || ''}" data-field="taxFree" onchange="updateSalaryCell('${emp.id}', 'taxFree', this.value)"></td>
-                        <td style="padding: 0; border: 1px solid #ddd;"><input type="number" class="salary-cell" style="width: 60px; font-size: 11px; padding: 4px; border: none; text-align: center;" value="${emp.overtimeHours || ''}" data-field="overtimeHours" onchange="updateSalaryCell('${emp.id}', 'overtimeHours', this.value)"></td>
-                        <td style="padding: 0; border: 1px solid #ddd;"><input type="number" class="salary-cell" style="width: 60px; font-size: 11px; padding: 4px; border: none; text-align: center;" value="${emp.holidayDays || ''}" data-field="holidayDays" onchange="updateSalaryCell('${emp.id}', 'holidayDays', this.value)"></td>
-                        <td style="padding: 0; border: 1px solid #ddd;"><input type="number" class="salary-cell" style="width: 60px; font-size: 11px; padding: 4px; border: none; text-align: center;" value="${emp.holidayHours || ''}" data-field="holidayHours" onchange="updateSalaryCell('${emp.id}', 'holidayHours', this.value)"></td>
-                        <td style="padding: 0; border: 1px solid #ddd;"><input type="number" class="salary-cell" style="width: 60px; font-size: 11px; padding: 4px; border: none; text-align: center;" value="${emp.nightHours || ''}" data-field="nightHours" onchange="updateSalaryCell('${emp.id}', 'nightHours', this.value)"></td>
+                        <td style="padding: 0; border: 1px solid #ddd;"><input type="number" class="salary-cell" style="width: 100px; font-size: 11px; padding: 4px; border: none; text-align: right; font-weight: bold; ${inputStyle}" value="${emp.annualSalary || ''}" data-field="annualSalary" onchange="updateSalaryCell('${emp.id}', 'annualSalary', this.value)" ${disabledAttr}></td>
+                        <td style="padding: 0; border: 1px solid #ddd;"><input type="number" class="salary-cell" style="width: 90px; font-size: 11px; padding: 4px; border: none; text-align: right; ${inputStyle}" value="${emp.taxFree || ''}" data-field="taxFree" onchange="updateSalaryCell('${emp.id}', 'taxFree', this.value)" ${disabledAttr}></td>
+                        <td style="padding: 0; border: 1px solid #ddd;"><input type="number" class="salary-cell" style="width: 60px; font-size: 11px; padding: 4px; border: none; text-align: center; ${inputStyle}" value="${emp.overtimeHours || ''}" data-field="overtimeHours" onchange="updateSalaryCell('${emp.id}', 'overtimeHours', this.value)" ${disabledAttr}></td>
+                        <td style="padding: 0; border: 1px solid #ddd;"><input type="number" class="salary-cell" style="width: 60px; font-size: 11px; padding: 4px; border: none; text-align: center; ${inputStyle}" value="${emp.holidayDays || ''}" data-field="holidayDays" onchange="updateSalaryCell('${emp.id}', 'holidayDays', this.value)" ${disabledAttr}></td>
+                        <td style="padding: 0; border: 1px solid #ddd;"><input type="number" class="salary-cell" style="width: 60px; font-size: 11px; padding: 4px; border: none; text-align: center; ${inputStyle}" value="${emp.holidayHours || ''}" data-field="holidayHours" onchange="updateSalaryCell('${emp.id}', 'holidayHours', this.value)" ${disabledAttr}></td>
+                        <td style="padding: 0; border: 1px solid #ddd;"><input type="number" class="salary-cell" style="width: 60px; font-size: 11px; padding: 4px; border: none; text-align: center; ${inputStyle}" value="${emp.nightHours || ''}" data-field="nightHours" onchange="updateSalaryCell('${emp.id}', 'nightHours', this.value)" ${disabledAttr}></td>
                     </tr>
                     `;
                 }).join('');
             }
-            
-            hideLoading();
         }
 
         window.exportSalary = function() {
