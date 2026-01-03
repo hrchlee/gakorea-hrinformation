@@ -359,10 +359,16 @@
 
         let currentAuthUser = null;
 
-        // 인증 상태 감지 (임시로 무시하고 바로 메인 화면 표시)
+        // 인증 상태 감지
         onAuthStateChanged(auth, async (user) => {
-            console.log('⚠️ 인증 체크 무시 - 개발 모드');
-            await showMainScreen(user || { email: 'anonymous@gakorea.com' });
+            if (user) {
+                console.log('✅ 로그인됨:', user.email);
+                currentAuthUser = user;
+                await showMainScreen(user);
+            } else {
+                console.log('❌ 로그아웃 상태');
+                showLoginScreen();
+            }
         });
 
         // 로그인 폼 처리
@@ -1272,9 +1278,6 @@
             
             XLSX.utils.book_append_sheet(wb, ws, '인사정보');
             XLSX.writeFile(wb, 'GA_KOREA_인사정보_양식.xlsx');
-        }
-            XLSX.utils.book_append_sheet(wb, ws, '직원목록');
-            XLSX.writeFile(wb, '직원등록_양식.xlsx');
         }
 
         // ===== 엑셀 업로드 =====
