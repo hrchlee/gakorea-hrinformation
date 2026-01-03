@@ -359,16 +359,10 @@
 
         let currentAuthUser = null;
 
-        // 인증 상태 감지
+        // 인증 상태 감지 (임시로 무시하고 바로 메인 화면 표시)
         onAuthStateChanged(auth, async (user) => {
-            if (user) {
-                console.log('✅ 로그인됨:', user.email);
-                currentAuthUser = user;
-                await showMainScreen(user);
-            } else {
-                console.log('❌ 로그아웃 상태');
-                showLoginScreen();
-            }
+            console.log('⚠️ 인증 체크 무시 - 개발 모드');
+            await showMainScreen(user || { email: 'anonymous@gakorea.com' });
         });
 
         // 로그인 폼 처리
