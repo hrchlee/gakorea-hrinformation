@@ -180,26 +180,26 @@
                 </div>
 
                 <div style="overflow-x: auto;">
-                    <table id="roster-table" style="width: 100%; border-collapse: collapse; background: white; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                    <table id="roster-table" style="width: 100%; border-collapse: collapse; background: white; box-shadow: 0 1px 3px rgba(0,0,0,0.1); font-size: 11px;">
                         <thead style="background: #f5f5f5;">
                             <tr>
-                                <th style="padding: 12px; border: 1px solid #ddd; font-size: 12px;">근무지</th>
-                                <th style="padding: 12px; border: 1px solid #ddd; font-size: 12px;">부서</th>
-                                <th style="padding: 12px; border: 1px solid #ddd; font-size: 12px;">성명</th>
-                                <th style="padding: 12px; border: 1px solid #ddd; font-size: 12px;">직위</th>
-                                <th style="padding: 12px; border: 1px solid #ddd; font-size: 12px;">직급</th>
-                                <th style="padding: 12px; border: 1px solid #ddd; font-size: 12px;">직무</th>
-                                <th style="padding: 12px; border: 1px solid #ddd; font-size: 12px;">소속법인</th>
-                                <th style="padding: 12px; border: 1px solid #ddd; font-size: 12px;">주민등록번호</th>
-                                <th style="padding: 12px; border: 1px solid #ddd; font-size: 12px;">생년월일</th>
-                                <th style="padding: 12px; border: 1px solid #ddd; font-size: 12px;">나이</th>
-                                <th style="padding: 12px; border: 1px solid #ddd; font-size: 12px;">성별</th>
-                                <th style="padding: 12px; border: 1px solid #ddd; font-size: 12px;">최초입사일</th>
-                                <th style="padding: 12px; border: 1px solid #ddd; font-size: 12px;">근속기간</th>
-                                <th style="padding: 12px; border: 1px solid #ddd; font-size: 12px;">최종학력</th>
-                                <th style="padding: 12px; border: 1px solid #ddd; font-size: 12px;">연락처</th>
-                                <th style="padding: 12px; border: 1px solid #ddd; font-size: 12px;">이메일</th>
-                                <th style="padding: 12px; border: 1px solid #ddd; font-size: 12px;">주소</th>
+                                <th style="padding: 6px 8px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">근무지</th>
+                                <th style="padding: 6px 8px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">부서</th>
+                                <th style="padding: 6px 8px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">성명</th>
+                                <th style="padding: 6px 8px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">직위</th>
+                                <th style="padding: 6px 8px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">직급</th>
+                                <th style="padding: 6px 8px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">직무</th>
+                                <th style="padding: 6px 8px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">소속법인</th>
+                                <th style="padding: 6px 8px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">주민등록번호</th>
+                                <th style="padding: 6px 8px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">생년월일</th>
+                                <th style="padding: 6px 8px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">나이</th>
+                                <th style="padding: 6px 8px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">성별</th>
+                                <th style="padding: 6px 8px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">최초입사일</th>
+                                <th style="padding: 6px 8px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">근속기간</th>
+                                <th style="padding: 6px 8px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">최종학력</th>
+                                <th style="padding: 6px 8px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">연락처</th>
+                                <th style="padding: 6px 8px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">이메일</th>
+                                <th style="padding: 6px 8px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">주소</th>
                             </tr>
                         </thead>
                         <tbody id="roster-tbody">
@@ -1637,23 +1637,23 @@
                     
                     return `
                     <tr style="border-bottom: 1px solid #eee;">
-                        <td style="padding: 10px; border: 1px solid #ddd;">${emp.workLocation || '-'}</td>
-                        <td style="padding: 10px; border: 1px solid #ddd;">${depts[emp.departmentCode] || '-'}</td>
-                        <td style="padding: 10px; border: 1px solid #ddd; font-weight: bold;">${emp.name || '-'}</td>
-                        <td style="padding: 10px; border: 1px solid #ddd;">${emp.jobTitle || '-'}</td>
-                        <td style="padding: 10px; border: 1px solid #ddd;">${emp.position || '-'}</td>
-                        <td style="padding: 10px; border: 1px solid #ddd;">${emp.jobRole || '-'}</td>
-                        <td style="padding: 10px; border: 1px solid #ddd;">${companies[emp.companyCode] || '-'}</td>
-                        <td style="padding: 10px; border: 1px solid #ddd;">${emp.residentNumber || '-'}</td>
-                        <td style="padding: 10px; border: 1px solid #ddd;">${emp.birthDate || '-'}</td>
-                        <td style="padding: 10px; border: 1px solid #ddd; text-align: center;">${age}</td>
-                        <td style="padding: 10px; border: 1px solid #ddd; text-align: center;">${emp.gender || '-'}</td>
-                        <td style="padding: 10px; border: 1px solid #ddd;">${emp.hireDate || '-'}</td>
-                        <td style="padding: 10px; border: 1px solid #ddd;">${tenure}</td>
-                        <td style="padding: 10px; border: 1px solid #ddd;">${emp.education || '-'}</td>
-                        <td style="padding: 10px; border: 1px solid #ddd;">${emp.mobile || '-'}</td>
-                        <td style="padding: 10px; border: 1px solid #ddd;">${emp.companyEmail || emp.personalEmail || '-'}</td>
-                        <td style="padding: 10px; border: 1px solid #ddd;">${emp.address || '-'}</td>
+                        <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">${emp.workLocation || '-'}</td>
+                        <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">${depts[emp.departmentCode] || '-'}</td>
+                        <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; font-weight: bold; white-space: nowrap;">${emp.name || '-'}</td>
+                        <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">${emp.jobTitle || '-'}</td>
+                        <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">${emp.position || '-'}</td>
+                        <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">${emp.jobRole || '-'}</td>
+                        <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">${companies[emp.companyCode] || '-'}</td>
+                        <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">${emp.residentNumber || '-'}</td>
+                        <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">${emp.birthDate || '-'}</td>
+                        <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; text-align: center; white-space: nowrap;">${age}</td>
+                        <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; text-align: center; white-space: nowrap;">${emp.gender || '-'}</td>
+                        <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">${emp.hireDate || '-'}</td>
+                        <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">${tenure}</td>
+                        <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">${emp.education || '-'}</td>
+                        <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">${emp.mobile || '-'}</td>
+                        <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">${emp.companyEmail || emp.personalEmail || '-'}</td>
+                        <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">${emp.address || '-'}</td>
                     </tr>
                 `;
                 }).join('');
