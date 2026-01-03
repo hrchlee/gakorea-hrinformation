@@ -1841,35 +1841,6 @@
                 
                 return 0;
             });
-                        else if (idxB === -1) result = -1;
-                        else result = idxA - idxB;
-                    } else if (sortKey === 'jobTitle') {
-                        const order = settings.jobTitles || [];
-                        const idxA = order.indexOf(a.jobTitle || '');
-                        const idxB = order.indexOf(b.jobTitle || '');
-                        if (idxA === -1 && idxB === -1) result = (a.jobTitle || '').localeCompare(b.jobTitle || '');
-                        else if (idxA === -1) result = 1;
-                        else if (idxB === -1) result = -1;
-                        else result = idxA - idxB;
-                    } else if (sortKey === 'jobRole') {
-                        const order = settings.jobRoles || [];
-                        const idxA = order.indexOf(a.jobRole || '');
-                        const idxB = order.indexOf(b.jobRole || '');
-                        if (idxA === -1 && idxB === -1) result = (a.jobRole || '').localeCompare(b.jobRole || '');
-                        else if (idxA === -1) result = 1;
-                        else if (idxB === -1) result = -1;
-                        else result = idxA - idxB;
-                    } else if (sortKey === 'department') {
-                        result = (depts[a.departmentCode] || '').localeCompare(depts[b.departmentCode] || '');
-                    } else if (sortKey === 'location') {
-                        result = (a.workLocation || '').localeCompare(b.workLocation || '');
-                    }
-                    
-                    if (result !== 0) return result;
-                }
-                
-                return 0;
-            });
             
             // 테이블 렌더링
             const tbody = document.getElementById('roster-tbody');
