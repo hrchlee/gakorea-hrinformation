@@ -600,6 +600,8 @@
         window.addEventListener('DOMContentLoaded', async function() {
             showLoading();
             await initializeData();
+            // 초기 탭 로드
+            switchMainTab('employee-info');
             hideLoading();
         });
 
@@ -619,6 +621,8 @@
             if (tabName === 'employee-info') {
                 document.getElementById('employee-info-tab').style.display = 'flex';
                 document.getElementById('tab-employee').classList.add('active');
+                loadEmployees();  // 직원 목록 로드 추가
+                loadCompanyFilters();  // 법인 필터 로드 추가
             } else if (tabName === 'salary-info') {
                 document.getElementById('salary-info-tab').style.display = 'flex';
                 document.getElementById('tab-employee').classList.add('active');
@@ -1035,7 +1039,7 @@
                         <table class="form-table">
                             <tr>
                                 <th class="required">사번</th>
-                                <td><input name="employeeId" value="${emp?.employeeId || generateId()}" ${emp ? 'readonly' : ''} required></td>
+                                <td><input name="employeeId" value="${emp?.id || generateId()}" ${emp ? 'readonly' : ''} required></td>
                                 <th>영문 사번</th>
                                 <td><input name="employeeIdEn" value="${emp?.employeeIdEn || ''}"></td>
                             </tr>
@@ -1345,11 +1349,13 @@
                 
                 console.log('저장 데이터:', data);
                 
-                await window.setDoc(window.doc(window.db, 'employees', data.employeeId), data);
+                // employeeId를 문서 ID로 사용
+                const docId = data.employeeId || generateId();
+                await window.setDoc(window.doc(window.db, 'employees', docId), data);
                 
                 alert('✅ 저장되었습니다!');
                 await loadEmployees();
-                selectEmployee(data.employeeId);
+                selectEmployee(docId);
                 
             } catch (error) {
                 console.error('저장 오류:', error);
