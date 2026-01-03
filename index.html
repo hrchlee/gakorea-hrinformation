@@ -116,7 +116,13 @@
             <button id="tab-employee" class="tab-btn active">
                 직원 관리
                 <div class="dropdown-menu">
-                    <div class="dropdown-item" onclick="switchMainTab('employee-info')">임직원 정보</div>
+                    <div class="dropdown-item" onclick="switchMainTab('employee-info')">임직원 관리</div>
+                    <div class="dropdown-item" onclick="switchMainTab('salary-info')">연봉정보</div>
+                </div>
+            </button>
+            <button id="tab-employee-data" class="tab-btn">
+                임직원 정보
+                <div class="dropdown-menu">
                     <div class="dropdown-item" onclick="switchMainTab('employee-roster')">임직원 명부</div>
                     <div class="dropdown-item" onclick="switchMainTab('employee-record')">인사기록카드</div>
                 </div>
@@ -219,6 +225,64 @@
             <div class="main-content" style="padding: 30px;">
                 <h2>인사기록카드</h2>
                 <div class="empty-state"><p>준비 중입니다</p></div>
+            </div>
+        </div>
+
+        <!-- 연봉정보 탭 -->
+        <div id="salary-info-tab" class="layout" style="display: none;">
+            <div class="main-content" style="padding: 30px;">
+                <h2 style="margin-bottom: 20px;">연봉정보</h2>
+                
+                <!-- 필터 -->
+                <div style="display: flex; gap: 15px; margin-bottom: 20px; align-items: center;">
+                    <select id="salary-company-filter" onchange="loadSalaryInfo()" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                        <option value="">전체 법인</option>
+                    </select>
+                    <select id="salary-location-filter" onchange="loadSalaryInfo()" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                        <option value="">전체 근무지</option>
+                    </select>
+                    <select id="salary-position-filter" onchange="loadSalaryInfo()" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                        <option value="">전체 직급</option>
+                    </select>
+                    <button class="btn btn-primary" onclick="exportSalary()" style="margin-left: auto;">📊 Excel 내보내기</button>
+                </div>
+
+                <!-- 연봉정보 테이블 -->
+                <div style="overflow-x: auto; background: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                    <table id="salary-table" style="width: 100%; border-collapse: collapse; background: white; font-size: 11px;">
+                        <thead style="background: #f5f5f5;">
+                            <tr>
+                                <th style="padding: 6px 8px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap; width: 40px;">No</th>
+                                <th style="padding: 6px 8px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">근무지</th>
+                                <th style="padding: 6px 8px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">성명</th>
+                                <th style="padding: 6px 8px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">법인명</th>
+                                <th style="padding: 6px 8px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">입사일</th>
+                                <th style="padding: 6px 8px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">직위</th>
+                                <th style="padding: 6px 8px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">부서</th>
+                                <th style="padding: 6px 8px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">직무</th>
+                                <th style="padding: 6px 8px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">기본급</th>
+                                <th style="padding: 6px 8px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">차량보조비</th>
+                                <th style="padding: 6px 8px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">기타수당</th>
+                                <th style="padding: 6px 8px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">연장근로수당</th>
+                                <th style="padding: 6px 8px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">휴일근로수당</th>
+                                <th style="padding: 6px 8px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">야간근로수당</th>
+                                <th style="padding: 6px 8px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">고정상여</th>
+                                <th style="padding: 6px 8px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">월 급여 계</th>
+                                <th style="padding: 6px 8px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">연봉</th>
+                                <th style="padding: 6px 8px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">비과세</th>
+                                <th style="padding: 6px 8px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">연장근로(시간)</th>
+                                <th style="padding: 6px 8px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">휴일근로(일)</th>
+                                <th style="padding: 6px 8px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">휴일근로(시간)</th>
+                                <th style="padding: 6px 8px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">야간근로(시간)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="salary-tbody">
+                            <tr>
+                                <td colspan="22" style="padding: 40px; text-align: center; color: #999;">데이터가 없습니다</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
 
@@ -512,6 +576,7 @@
             
             // 모든 탭 숨기기
             document.getElementById('employee-info-tab').style.display = 'none';
+            document.getElementById('salary-info-tab').style.display = 'none';
             document.getElementById('employee-roster-tab').style.display = 'none';
             document.getElementById('employee-record-tab').style.display = 'none';
             document.getElementById('company-tab').style.display = 'none';
@@ -521,13 +586,17 @@
             if (tabName === 'employee-info') {
                 document.getElementById('employee-info-tab').style.display = 'flex';
                 document.getElementById('tab-employee').classList.add('active');
+            } else if (tabName === 'salary-info') {
+                document.getElementById('salary-info-tab').style.display = 'flex';
+                document.getElementById('tab-employee').classList.add('active');
+                loadSalaryInfo();
             } else if (tabName === 'employee-roster') {
                 document.getElementById('employee-roster-tab').style.display = 'flex';
-                document.getElementById('tab-employee').classList.add('active');
+                document.getElementById('tab-employee-data').classList.add('active');
                 loadRoster();
             } else if (tabName === 'employee-record') {
                 document.getElementById('employee-record-tab').style.display = 'flex';
-                document.getElementById('tab-employee').classList.add('active');
+                document.getElementById('tab-employee-data').classList.add('active');
             } else if (tabName === 'company') {
                 document.getElementById('company-tab').style.display = 'flex';
                 document.getElementById('tab-company').classList.add('active');
@@ -1775,6 +1844,169 @@
             const link = document.createElement('a');
             link.href = URL.createObjectURL(blob);
             link.download = '임직원명부_' + new Date().toISOString().slice(0,10) + '.csv';
+            link.click();
+        }
+
+        // ===== 연봉정보 =====
+        async function loadSalaryInfo() {
+            showLoading();
+            
+            const companyFilter = document.getElementById('salary-company-filter').value;
+            const locationFilter = document.getElementById('salary-location-filter').value;
+            const positionFilter = document.getElementById('salary-position-filter').value;
+            
+            // 법인 데이터 로드
+            const companiesSnap = await window.getDocs(window.collection(window.db, 'companies'));
+            const companies = {};
+            companiesSnap.forEach(doc => {
+                const c = doc.data();
+                companies[c.code] = c.name;
+            });
+            
+            // 부서 데이터 로드
+            const deptsSnap = await window.getDocs(window.collection(window.db, 'departments'));
+            const depts = {};
+            deptsSnap.forEach(doc => {
+                const d = doc.data();
+                depts[d.code] = d.name;
+            });
+            
+            // 직원 데이터 로드
+            const employeesSnap = await window.getDocs(window.collection(window.db, 'employees'));
+            let employees = [];
+            const locations = new Set();
+            const positions = new Set();
+            
+            employeesSnap.forEach(doc => {
+                const emp = doc.data();
+                employees.push(emp);
+                if (emp.workLocation) locations.add(emp.workLocation);
+                if (emp.position) positions.add(emp.position);
+            });
+            
+            // 법인 필터 업데이트
+            const companySelect = document.getElementById('salary-company-filter');
+            if (companySelect.options.length === 1) {
+                Object.entries(companies).forEach(([code, name]) => {
+                    const option = document.createElement('option');
+                    option.value = code;
+                    option.textContent = name;
+                    companySelect.appendChild(option);
+                });
+            }
+            
+            // 근무지 필터 업데이트
+            const locationSelect = document.getElementById('salary-location-filter');
+            if (locationSelect.options.length === 1) {
+                Array.from(locations).sort().forEach(loc => {
+                    const option = document.createElement('option');
+                    option.value = loc;
+                    option.textContent = loc;
+                    locationSelect.appendChild(option);
+                });
+            }
+            
+            // 직급 필터 업데이트
+            const positionSelect = document.getElementById('salary-position-filter');
+            if (positionSelect.options.length === 1) {
+                const positionOrder = ['인턴', '사원', '주임', '대리', '과장', '차장', '부장', '이사'];
+                const sortedPositions = Array.from(positions).sort((a, b) => {
+                    const idxA = positionOrder.indexOf(a);
+                    const idxB = positionOrder.indexOf(b);
+                    if (idxA === -1 && idxB === -1) return a.localeCompare(b);
+                    if (idxA === -1) return 1;
+                    if (idxB === -1) return -1;
+                    return idxA - idxB;
+                });
+                sortedPositions.forEach(pos => {
+                    const option = document.createElement('option');
+                    option.value = pos;
+                    option.textContent = pos;
+                    positionSelect.appendChild(option);
+                });
+            }
+            
+            // 필터링
+            if (companyFilter) {
+                if (companyFilter !== 'C001') {
+                    employees = employees.filter(e => e.companyCode === companyFilter);
+                }
+            }
+            if (locationFilter) {
+                employees = employees.filter(e => e.workLocation === locationFilter);
+            }
+            if (positionFilter) {
+                employees = employees.filter(e => e.position === positionFilter);
+            }
+            
+            // 테이블 렌더링
+            const tbody = document.getElementById('salary-tbody');
+            if (employees.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="22" style="padding: 40px; text-align: center; color: #999;">데이터가 없습니다</td></tr>';
+            } else {
+                tbody.innerHTML = employees.map((emp, index) => {
+                    // 급여 계산
+                    const baseSalary = Number(emp.baseSalary || 0);
+                    const carAllowance = Number(emp.carAllowance || 0);
+                    const otherAllowance = Number(emp.otherAllowance || 0);
+                    const overtimePay = Number(emp.overtimePay || 0);
+                    const holidayPay = Number(emp.holidayPay || 0);
+                    const nightPay = Number(emp.nightPay || 0);
+                    const fixedBonus = Number(emp.fixedBonus || 0);
+                    
+                    const monthlyTotal = baseSalary + carAllowance + otherAllowance + overtimePay + holidayPay + nightPay + fixedBonus;
+                    const annualSalary = emp.annualSalary || (monthlyTotal * 12);
+                    
+                    return `
+                    <tr style="border-bottom: 1px solid #eee;">
+                        <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; text-align: center; white-space: nowrap;">${index + 1}</td>
+                        <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">${emp.workLocation || '-'}</td>
+                        <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; font-weight: bold; white-space: nowrap;">${emp.name || '-'}</td>
+                        <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">${companies[emp.companyCode] || '-'}</td>
+                        <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">${emp.hireDate || '-'}</td>
+                        <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">${emp.jobTitle || '-'}</td>
+                        <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">${depts[emp.departmentCode] || '-'}</td>
+                        <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">${emp.duty || '-'}</td>
+                        <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; text-align: right; white-space: nowrap;">${baseSalary.toLocaleString()}</td>
+                        <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; text-align: right; white-space: nowrap;">${carAllowance.toLocaleString()}</td>
+                        <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; text-align: right; white-space: nowrap;">${otherAllowance.toLocaleString()}</td>
+                        <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; text-align: right; white-space: nowrap;">${overtimePay.toLocaleString()}</td>
+                        <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; text-align: right; white-space: nowrap;">${holidayPay.toLocaleString()}</td>
+                        <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; text-align: right; white-space: nowrap;">${nightPay.toLocaleString()}</td>
+                        <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; text-align: right; white-space: nowrap;">${fixedBonus.toLocaleString()}</td>
+                        <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; text-align: right; white-space: nowrap; font-weight: bold;">${monthlyTotal.toLocaleString()}</td>
+                        <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; text-align: right; white-space: nowrap; font-weight: bold;">${Number(annualSalary).toLocaleString()}</td>
+                        <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; text-align: right; white-space: nowrap;">${Number(emp.taxFree || 0).toLocaleString()}</td>
+                        <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; text-align: center; white-space: nowrap;">${emp.overtimeHours || '-'}</td>
+                        <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; text-align: center; white-space: nowrap;">${emp.holidayDays || '-'}</td>
+                        <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; text-align: center; white-space: nowrap;">${emp.holidayHours || '-'}</td>
+                        <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; text-align: center; white-space: nowrap;">${emp.nightHours || '-'}</td>
+                    </tr>
+                `;
+                }).join('');
+            }
+            
+            hideLoading();
+        }
+
+        window.exportSalary = function() {
+            const table = document.getElementById('salary-table');
+            let csv = [];
+            
+            for (let row of table.rows) {
+                let rowData = [];
+                for (let cell of row.cells) {
+                    rowData.push('"' + cell.textContent.replace(/"/g, '""') + '"');
+                }
+                csv.push(rowData.join(','));
+            }
+            
+            const csvContent = csv.join('\n');
+            const BOM = '\uFEFF';
+            const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = '연봉정보_' + new Date().toISOString().slice(0,10) + '.csv';
             link.click();
         }
 
