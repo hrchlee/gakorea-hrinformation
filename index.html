@@ -1931,6 +1931,49 @@
 
         // ===== 연봉정보 =====
         
+        // 수식 입력 중인 셀 추적
+        let activeFormulaCell = null;
+        
+        // 셀 클릭 핸들러
+        window.handleCellClick = function(event, employeeId, field) {
+            const input = event.target;
+            
+            // 포커스 시 수식 입력 모드 활성화
+            if (input.value.startsWith('=') || input.selectionStart === 0) {
+                activeFormulaCell = { employeeId, field, input };
+            }
+        }
+        
+        // 셀 참조 추가
+        window.addCellReference = function(event, employeeId, cellName) {
+            event.stopPropagation();
+            
+            if (!activeFormulaCell) return;
+            
+            const input = activeFormulaCell.input;
+            const cursorPos = input.selectionStart;
+            const currentValue = input.value;
+            
+            // 수식이 아니면 =로 시작하게 만들기
+            let newValue = currentValue;
+            if (!currentValue.startsWith('=')) {
+                newValue = '=' + cellName;
+            } else {
+                // 커서 위치에 셀 이름 삽입
+                newValue = currentValue.slice(0, cursorPos) + cellName + currentValue.slice(cursorPos);
+            }
+            
+            input.value = newValue;
+            input.focus();
+            
+            // 커서를 삽입된 텍스트 뒤로 이동
+            const newCursorPos = cursorPos + cellName.length + (currentValue.startsWith('=') ? 0 : 1);
+            input.setSelectionRange(newCursorPos, newCursorPos);
+            
+            // 실시간 계산 업데이트
+            updateSalaryCell(activeFormulaCell.employeeId, activeFormulaCell.field, newValue);
+        }
+        
         // 수식 평가 함수
         function evaluateFormula(formula, rowData) {
             if (!formula || !formula.toString().startsWith('=')) {
@@ -2060,6 +2103,7 @@
             
             employeesSnap.forEach(doc => {
                 const emp = doc.data();
+                emp.employeeId = doc.id;  // ID 추가
                 employees.push(emp);
                 if (emp.workLocation) locations.add(emp.workLocation);
                 if (emp.position) positions.add(emp.position);
@@ -2241,14 +2285,29 @@
                         <td style="padding: 2px; border: 1px solid #ddd; font-size: 11px; background: #f9f9f9;">${emp.hireDate || '-'}</td>
                         <td style="padding: 2px; border: 1px solid #ddd; font-size: 11px; background: #f9f9f9;">${emp.jobTitle || '-'}</td>
                         <td style="padding: 2px; border: 1px solid #ddd; font-size: 11px; background: #f9f9f9;">${depts[emp.departmentCode] || '-'}</td>
-                        <td style="padding: 0; border: 1px solid #ddd;"><input type="text" class="salary-cell" style="width: 90px; font-size: 11px; padding: 4px; border: none; text-align: right;" value="${emp.regularWage || ''}" data-field="regularWage" onchange="updateSalaryCell('${emp.employeeId}', 'regularWage', this.value)" placeholder="값 또는 =수식"></td>
-                        <td style="padding: 0; border: 1px solid #ddd;"><input type="text" class="salary-cell" style="width: 90px; font-size: 11px; padding: 4px; border: none; text-align: right;" value="${emp.baseSalary || ''}" data-field="baseSalary" onchange="updateSalaryCell('${emp.employeeId}', 'baseSalary', this.value)" placeholder="값 또는 =수식"></td>
-                        <td style="padding: 0; border: 1px solid #ddd;"><input type="text" class="salary-cell" style="width: 90px; font-size: 11px; padding: 4px; border: none; text-align: right;" value="${emp.carAllowance || ''}" data-field="carAllowance" onchange="updateSalaryCell('${emp.employeeId}', 'carAllowance', this.value)" placeholder="값 또는 =수식"></td>
-                        <td style="padding: 0; border: 1px solid #ddd;"><input type="text" class="salary-cell" style="width: 90px; font-size: 11px; padding: 4px; border: none; text-align: right;" value="${emp.otherAllowance || ''}" data-field="otherAllowance" onchange="updateSalaryCell('${emp.employeeId}', 'otherAllowance', this.value)" placeholder="값 또는 =수식"></td>
-                        <td style="padding: 0; border: 1px solid #ddd;"><input type="text" class="salary-cell" style="width: 120px; font-size: 11px; padding: 4px; border: none; text-align: right;" value="${emp.overtimePay || ''}" data-field="overtimePay" onchange="updateSalaryCell('${emp.employeeId}', 'overtimePay', this.value)" placeholder="=통상임금*1.5*연장근로시간"></td>
-                        <td style="padding: 0; border: 1px solid #ddd;"><input type="text" class="salary-cell" style="width: 120px; font-size: 11px; padding: 4px; border: none; text-align: right;" value="${emp.holidayPay || ''}" data-field="holidayPay" onchange="updateSalaryCell('${emp.employeeId}', 'holidayPay', this.value)" placeholder="=통상임금*1.5*휴일근로시간"></td>
-                        <td style="padding: 0; border: 1px solid #ddd;"><input type="text" class="salary-cell" style="width: 120px; font-size: 11px; padding: 4px; border: none; text-align: right;" value="${emp.nightPay || ''}" data-field="nightPay" onchange="updateSalaryCell('${emp.employeeId}', 'nightPay', this.value)" placeholder="=통상임금*0.5*야간근로시간"></td>
-                        <td style="padding: 0; border: 1px solid #ddd;"><input type="text" class="salary-cell" style="width: 90px; font-size: 11px; padding: 4px; border: none; text-align: right;" value="${emp.fixedBonus || ''}" data-field="fixedBonus" onchange="updateSalaryCell('${emp.employeeId}', 'fixedBonus', this.value)" placeholder="값 또는 =수식"></td>
+                        <td style="padding: 0; border: 1px solid #ddd; position: relative;" onclick="addCellReference(event, '${emp.employeeId}', '통상임금')">
+                            <div style="position: absolute; top: 0; left: 0; font-size: 9px; color: #999; padding: 1px 3px; pointer-events: none;">통상임금</div>
+                            <input type="text" class="salary-cell" style="width: 90px; font-size: 11px; padding: 4px; padding-top: 12px; border: none; text-align: right;" value="${emp.regularWage || ''}" data-field="regularWage" onfocus="handleCellClick(event, '${emp.employeeId}', 'regularWage')" onchange="updateSalaryCell('${emp.employeeId}', 'regularWage', this.value)" placeholder="=수식">
+                        </td>
+                        <td style="padding: 0; border: 1px solid #ddd; position: relative;" onclick="addCellReference(event, '${emp.employeeId}', '기본급')">
+                            <div style="position: absolute; top: 0; left: 0; font-size: 9px; color: #999; padding: 1px 3px; pointer-events: none;">기본급</div>
+                            <input type="text" class="salary-cell" style="width: 90px; font-size: 11px; padding: 4px; padding-top: 12px; border: none; text-align: right;" value="${emp.baseSalary || ''}" data-field="baseSalary" onfocus="handleCellClick(event, '${emp.employeeId}', 'baseSalary')" onchange="updateSalaryCell('${emp.employeeId}', 'baseSalary', this.value)" placeholder="=수식">
+                        </td>
+                        <td style="padding: 0; border: 1px solid #ddd; position: relative;" onclick="addCellReference(event, '${emp.employeeId}', '차량보조비')">
+                            <div style="position: absolute; top: 0; left: 0; font-size: 9px; color: #999; padding: 1px 3px; pointer-events: none;">차량보조비</div>
+                            <input type="text" class="salary-cell" style="width: 90px; font-size: 11px; padding: 4px; padding-top: 12px; border: none; text-align: right;" value="${emp.carAllowance || ''}" data-field="carAllowance" onfocus="handleCellClick(event, '${emp.employeeId}', 'carAllowance')" onchange="updateSalaryCell('${emp.employeeId}', 'carAllowance', this.value)" placeholder="=수식">
+                        </td>
+                        <td style="padding: 0; border: 1px solid #ddd; position: relative;" onclick="addCellReference(event, '${emp.employeeId}', '기타수당')">
+                            <div style="position: absolute; top: 0; left: 0; font-size: 9px; color: #999; padding: 1px 3px; pointer-events: none;">기타수당</div>
+                            <input type="text" class="salary-cell" style="width: 90px; font-size: 11px; padding: 4px; padding-top: 12px; border: none; text-align: right;" value="${emp.otherAllowance || ''}" data-field="otherAllowance" onfocus="handleCellClick(event, '${emp.employeeId}', 'otherAllowance')" onchange="updateSalaryCell('${emp.employeeId}', 'otherAllowance', this.value)" placeholder="=수식">
+                        </td>
+                        <td style="padding: 0; border: 1px solid #ddd;"><input type="text" class="salary-cell" style="width: 120px; font-size: 11px; padding: 4px; border: none; text-align: right;" value="${emp.overtimePay || ''}" data-field="overtimePay" onfocus="handleCellClick(event, '${emp.employeeId}', 'overtimePay')" onchange="updateSalaryCell('${emp.employeeId}', 'overtimePay', this.value)" placeholder="=통상임금*1.5*연장근로시간"></td>
+                        <td style="padding: 0; border: 1px solid #ddd;"><input type="text" class="salary-cell" style="width: 120px; font-size: 11px; padding: 4px; border: none; text-align: right;" value="${emp.holidayPay || ''}" data-field="holidayPay" onfocus="handleCellClick(event, '${emp.employeeId}', 'holidayPay')" onchange="updateSalaryCell('${emp.employeeId}', 'holidayPay', this.value)" placeholder="=통상임금*1.5*휴일근로시간"></td>
+                        <td style="padding: 0; border: 1px solid #ddd;"><input type="text" class="salary-cell" style="width: 120px; font-size: 11px; padding: 4px; border: none; text-align: right;" value="${emp.nightPay || ''}" data-field="nightPay" onfocus="handleCellClick(event, '${emp.employeeId}', 'nightPay')" onchange="updateSalaryCell('${emp.employeeId}', 'nightPay', this.value)" placeholder="=통상임금*0.5*야간근로시간"></td>
+                        <td style="padding: 0; border: 1px solid #ddd; position: relative;" onclick="addCellReference(event, '${emp.employeeId}', '고정상여')">
+                            <div style="position: absolute; top: 0; left: 0; font-size: 9px; color: #999; padding: 1px 3px; pointer-events: none;">고정상여</div>
+                            <input type="text" class="salary-cell" style="width: 90px; font-size: 11px; padding: 4px; padding-top: 12px; border: none; text-align: right;" value="${emp.fixedBonus || ''}" data-field="fixedBonus" onfocus="handleCellClick(event, '${emp.employeeId}', 'fixedBonus')" onchange="updateSalaryCell('${emp.employeeId}', 'fixedBonus', this.value)" placeholder="=수식">
+                        </td>
                         <td style="padding: 4px; border: 1px solid #ddd; font-size: 11px; text-align: right; font-weight: bold; background: #fffbcc;">${monthlyTotal.toLocaleString()}</td>
                         <td style="padding: 0; border: 1px solid #ddd;"><input type="text" class="salary-cell" style="width: 100px; font-size: 11px; padding: 4px; border: none; text-align: right; font-weight: bold;" value="${emp.annualSalary || ''}" data-field="annualSalary" onchange="updateSalaryCell('${emp.employeeId}', 'annualSalary', this.value)" placeholder="값 또는 =수식"></td>
                         <td style="padding: 0; border: 1px solid #ddd;"><input type="text" class="salary-cell" style="width: 90px; font-size: 11px; padding: 4px; border: none; text-align: right;" value="${emp.taxFree || ''}" data-field="taxFree" onchange="updateSalaryCell('${emp.employeeId}', 'taxFree', this.value)" placeholder="값 또는 =수식"></td>
