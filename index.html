@@ -262,11 +262,11 @@
                             <tr>
                                 <th style="padding: 6px 8px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap; width: 40px;">No</th>
                                 <th style="padding: 6px 8px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">근무지</th>
+                                <th style="padding: 6px 8px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">부서</th>
                                 <th style="padding: 6px 8px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">성명</th>
+                                <th style="padding: 6px 8px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">직위</th>
                                 <th style="padding: 6px 8px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">법인명</th>
                                 <th style="padding: 6px 8px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">입사일</th>
-                                <th style="padding: 6px 8px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">직위</th>
-                                <th style="padding: 6px 8px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">부서</th>
                                 <th style="padding: 6px 8px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">통상임금</th>
                                 <th style="padding: 6px 8px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">기본급</th>
                                 <th style="padding: 6px 8px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">차량보조비</th>
@@ -286,7 +286,7 @@
                         </thead>
                         <tbody id="salary-tbody">
                             <tr>
-                                <td colspan="23" style="padding: 40px; text-align: center; color: #999;">데이터가 없습니다</td>
+                                <td colspan="22" style="padding: 40px; text-align: center; color: #999;">데이터가 없습니다</td>
                             </tr>
                         </tbody>
                     </table>
@@ -787,7 +787,7 @@
             });
         }
 
-        function selectEmployee(id) {
+        window.selectEmployee = function(id) {
             const emp = allEmployees.find(e => e.id === id);
             if (!emp) return;
             
@@ -2322,8 +2322,8 @@
                 tbody.innerHTML = '<tr><td colspan="22" style="padding: 40px; text-align: center; color: #999;">데이터가 없습니다</td></tr>';
             } else {
                 tbody.innerHTML = employees.map((emp, index) => {
-                    // 숫자 값으로 변환
-                    const regularWage = Number(emp.regularWage) || 0;
+                    // 숫자 값으로 변환 (통상임금은 정수로)
+                    const regularWage = Math.floor(Number(emp.regularWage) || 0);
                     const baseSalary = Number(emp.baseSalary) || 0;
                     const carAllowance = Number(emp.carAllowance) || 0;
                     const otherAllowance = Number(emp.otherAllowance) || 0;
@@ -2340,16 +2340,19 @@
                         : 'background: #f5f5f5; cursor: not-allowed;';
                     const disabledAttr = isEditMode ? '' : 'disabled';
                     
+                    // 통상임금 표시값 (정수로)
+                    const regularWageDisplay = emp.regularWage ? Math.floor(Number(emp.regularWage)) : '';
+                    
                     return `
                     <tr style="border-bottom: 1px solid #eee;" data-employee-id="${emp.id}">
                         <td style="padding: 4px; border: 1px solid #ddd; font-size: 11px; text-align: center; background: #f9f9f9;">${index + 1}</td>
                         <td style="padding: 4px; border: 1px solid #ddd; font-size: 11px; background: #f9f9f9;">${emp.workLocation || '-'}</td>
+                        <td style="padding: 4px; border: 1px solid #ddd; font-size: 11px; background: #f9f9f9;">${salaryDepts[emp.departmentCode] || '-'}</td>
                         <td style="padding: 4px; border: 1px solid #ddd; font-size: 11px; font-weight: bold; background: #f9f9f9;">${emp.name || '-'}</td>
+                        <td style="padding: 4px; border: 1px solid #ddd; font-size: 11px; background: #f9f9f9;">${emp.jobTitle || '-'}</td>
                         <td style="padding: 4px; border: 1px solid #ddd; font-size: 11px; background: #f9f9f9;">${salaryCompanies[emp.companyCode] || '-'}</td>
                         <td style="padding: 4px; border: 1px solid #ddd; font-size: 11px; background: #f9f9f9;">${emp.hireDate || '-'}</td>
-                        <td style="padding: 4px; border: 1px solid #ddd; font-size: 11px; background: #f9f9f9;">${emp.jobTitle || '-'}</td>
-                        <td style="padding: 4px; border: 1px solid #ddd; font-size: 11px; background: #f9f9f9;">${salaryDepts[emp.departmentCode] || '-'}</td>
-                        <td style="padding: 0; border: 1px solid #ddd;"><input type="number" class="salary-cell" style="width: 90px; font-size: 11px; padding: 4px; border: none; text-align: right; ${inputStyle}" value="${emp.regularWage || ''}" data-field="regularWage" onchange="updateSalaryCell('${emp.id}', 'regularWage', this.value)" ${disabledAttr}></td>
+                        <td style="padding: 0; border: 1px solid #ddd;"><input type="number" class="salary-cell" style="width: 90px; font-size: 11px; padding: 4px; border: none; text-align: right; ${inputStyle}" value="${regularWageDisplay}" data-field="regularWage" onchange="updateSalaryCell('${emp.id}', 'regularWage', this.value)" ${disabledAttr}></td>
                         <td style="padding: 0; border: 1px solid #ddd;"><input type="number" class="salary-cell" style="width: 90px; font-size: 11px; padding: 4px; border: none; text-align: right; ${inputStyle}" value="${emp.baseSalary || ''}" data-field="baseSalary" onchange="updateSalaryCell('${emp.id}', 'baseSalary', this.value)" ${disabledAttr}></td>
                         <td style="padding: 0; border: 1px solid #ddd;"><input type="number" class="salary-cell" style="width: 90px; font-size: 11px; padding: 4px; border: none; text-align: right; ${inputStyle}" value="${emp.carAllowance || ''}" data-field="carAllowance" onchange="updateSalaryCell('${emp.id}', 'carAllowance', this.value)" ${disabledAttr}></td>
                         <td style="padding: 0; border: 1px solid #ddd;"><input type="number" class="salary-cell" style="width: 90px; font-size: 11px; padding: 4px; border: none; text-align: right; ${inputStyle}" value="${emp.otherAllowance || ''}" data-field="otherAllowance" onchange="updateSalaryCell('${emp.id}', 'otherAllowance', this.value)" ${disabledAttr}></td>
