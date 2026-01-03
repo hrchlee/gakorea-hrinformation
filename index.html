@@ -244,8 +244,13 @@
                     <select id="salary-position-filter" onchange="loadSalaryInfo()" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
                         <option value="">전체 직급</option>
                     </select>
-                    <button class="btn btn-primary" onclick="saveSalaryChanges()" style="margin-left: auto;">💾 저장</button>
-                    <button class="btn btn-primary" onclick="exportSalary()">📊 Excel 내보내기</button>
+                    <div style="margin-left: auto; display: flex; gap: 10px;">
+                        <button class="btn btn-outline" onclick="downloadSalaryTemplate()">📥 연봉 양식 다운로드</button>
+                        <button class="btn btn-primary" onclick="document.getElementById('salary-excel-upload').click()">📤 엑셀 업로드</button>
+                        <input type="file" id="salary-excel-upload" accept=".xlsx,.xls" style="display: none;" onchange="handleSalaryExcelUpload(event)">
+                        <button class="btn btn-primary" onclick="saveSalaryChanges()">💾 저장</button>
+                        <button class="btn btn-primary" onclick="exportSalary()">📊 Excel 내보내기</button>
+                    </div>
                 </div>
 
                 <!-- 연봉정보 테이블 -->
@@ -1840,7 +1845,14 @@
                     } else if (sortKey === 'department') {
                         result = (depts[a.departmentCode] || '').localeCompare(depts[b.departmentCode] || '');
                     } else if (sortKey === 'location') {
-                        result = (a.workLocation || '').localeCompare(b.workLocation || '');
+                        // 시스템 관리자에서 설정한 근무지 순서대로 정렬
+                        const order = settings.locations || [];
+                        const idxA = order.indexOf(a.workLocation || '');
+                        const idxB = order.indexOf(b.workLocation || '');
+                        if (idxA === -1 && idxB === -1) result = (a.workLocation || '').localeCompare(b.workLocation || '');
+                        else if (idxA === -1) result = 1;
+                        else if (idxB === -1) result = -1;
+                        else result = idxA - idxB;
                     }
                     
                     if (result !== 0) return result;
@@ -2224,7 +2236,14 @@
                     } else if (sortKey === 'department') {
                         result = (depts[a.departmentCode] || '').localeCompare(depts[b.departmentCode] || '');
                     } else if (sortKey === 'location') {
-                        result = (a.workLocation || '').localeCompare(b.workLocation || '');
+                        // 시스템 관리자에서 설정한 근무지 순서대로 정렬
+                        const order = settings.locations || [];
+                        const idxA = order.indexOf(a.workLocation || '');
+                        const idxB = order.indexOf(b.workLocation || '');
+                        if (idxA === -1 && idxB === -1) result = (a.workLocation || '').localeCompare(b.workLocation || '');
+                        else if (idxA === -1) result = 1;
+                        else if (idxB === -1) result = -1;
+                        else result = idxA - idxB;
                     }
                     
                     if (result !== 0) return result;
@@ -2239,74 +2258,43 @@
                 tbody.innerHTML = '<tr><td colspan="23" style="padding: 40px; text-align: center; color: #999;">데이터가 없습니다</td></tr>';
             } else {
                 tbody.innerHTML = employees.map((emp, index) => {
-                    // 수식 평가를 위한 임시 데이터
-                    const tempData = {
-                        regularWage: emp.regularWage || 0,
-                        baseSalary: emp.baseSalary || 0,
-                        carAllowance: emp.carAllowance || 0,
-                        otherAllowance: emp.otherAllowance || 0,
-                        overtimePay: emp.overtimePay || 0,
-                        holidayPay: emp.holidayPay || 0,
-                        nightPay: emp.nightPay || 0,
-                        fixedBonus: emp.fixedBonus || 0,
-                        overtimeHours: emp.overtimeHours || 0,
-                        holidayDays: emp.holidayDays || 0,
-                        holidayHours: emp.holidayHours || 0,
-                        nightHours: emp.nightHours || 0
-                    };
-                    
-                    // 수식 평가
-                    const regularWage = evaluateFormula(emp.regularWage, tempData);
-                    const baseSalary = evaluateFormula(emp.baseSalary, tempData);
-                    const carAllowance = evaluateFormula(emp.carAllowance, tempData);
-                    const otherAllowance = evaluateFormula(emp.otherAllowance, tempData);
-                    const overtimePay = evaluateFormula(emp.overtimePay, tempData);
-                    const holidayPay = evaluateFormula(emp.holidayPay, tempData);
-                    const nightPay = evaluateFormula(emp.nightPay, tempData);
-                    const fixedBonus = evaluateFormula(emp.fixedBonus, tempData);
+                    // 숫자 값으로 변환
+                    const regularWage = Number(emp.regularWage) || 0;
+                    const baseSalary = Number(emp.baseSalary) || 0;
+                    const carAllowance = Number(emp.carAllowance) || 0;
+                    const otherAllowance = Number(emp.otherAllowance) || 0;
+                    const overtimePay = Number(emp.overtimePay) || 0;
+                    const holidayPay = Number(emp.holidayPay) || 0;
+                    const nightPay = Number(emp.nightPay) || 0;
+                    const fixedBonus = Number(emp.fixedBonus) || 0;
                     
                     const monthlyTotal = baseSalary + carAllowance + otherAllowance + overtimePay + holidayPay + nightPay + fixedBonus;
-                    const annualSalary = evaluateFormula(emp.annualSalary || (monthlyTotal * 12), tempData);
+                    const annualSalary = Number(emp.annualSalary) || (monthlyTotal * 12);
                     
                     return `
                     <tr style="border-bottom: 1px solid #eee;" data-employee-id="${emp.id}">
-                        <td style="padding: 2px; border: 1px solid #ddd; font-size: 11px; text-align: center; background: #f9f9f9;">${index + 1}</td>
-                        <td style="padding: 2px; border: 1px solid #ddd; font-size: 11px; background: #f9f9f9;">${emp.workLocation || '-'}</td>
-                        <td style="padding: 2px; border: 1px solid #ddd; font-size: 11px; font-weight: bold; background: #f9f9f9;">${emp.name || '-'}</td>
-                        <td style="padding: 2px; border: 1px solid #ddd; font-size: 11px; background: #f9f9f9;">${companies[emp.companyCode] || '-'}</td>
-                        <td style="padding: 2px; border: 1px solid #ddd; font-size: 11px; background: #f9f9f9;">${emp.hireDate || '-'}</td>
-                        <td style="padding: 2px; border: 1px solid #ddd; font-size: 11px; background: #f9f9f9;">${emp.jobTitle || '-'}</td>
-                        <td style="padding: 2px; border: 1px solid #ddd; font-size: 11px; background: #f9f9f9;">${depts[emp.departmentCode] || '-'}</td>
-                        <td style="padding: 0; border: 1px solid #ddd; position: relative;" onclick="addCellReference(event, '${emp.id}', '통상임금')">
-                            <div style="position: absolute; top: 0; left: 0; font-size: 9px; color: #999; padding: 1px 3px; pointer-events: none;">통상임금</div>
-                            <input type="text" class="salary-cell" style="width: 90px; font-size: 11px; padding: 4px; padding-top: 12px; border: none; text-align: right;" value="${emp.regularWage || ''}" data-field="regularWage" onfocus="handleCellClick(event, '${emp.id}', 'regularWage')" onchange="updateSalaryCell('${emp.id}', 'regularWage', this.value)" placeholder="=수식">
-                        </td>
-                        <td style="padding: 0; border: 1px solid #ddd; position: relative;" onclick="addCellReference(event, '${emp.id}', '기본급')">
-                            <div style="position: absolute; top: 0; left: 0; font-size: 9px; color: #999; padding: 1px 3px; pointer-events: none;">기본급</div>
-                            <input type="text" class="salary-cell" style="width: 90px; font-size: 11px; padding: 4px; padding-top: 12px; border: none; text-align: right;" value="${emp.baseSalary || ''}" data-field="baseSalary" onfocus="handleCellClick(event, '${emp.id}', 'baseSalary')" onchange="updateSalaryCell('${emp.id}', 'baseSalary', this.value)" placeholder="=수식">
-                        </td>
-                        <td style="padding: 0; border: 1px solid #ddd; position: relative;" onclick="addCellReference(event, '${emp.id}', '차량보조비')">
-                            <div style="position: absolute; top: 0; left: 0; font-size: 9px; color: #999; padding: 1px 3px; pointer-events: none;">차량보조비</div>
-                            <input type="text" class="salary-cell" style="width: 90px; font-size: 11px; padding: 4px; padding-top: 12px; border: none; text-align: right;" value="${emp.carAllowance || ''}" data-field="carAllowance" onfocus="handleCellClick(event, '${emp.id}', 'carAllowance')" onchange="updateSalaryCell('${emp.id}', 'carAllowance', this.value)" placeholder="=수식">
-                        </td>
-                        <td style="padding: 0; border: 1px solid #ddd; position: relative;" onclick="addCellReference(event, '${emp.id}', '기타수당')">
-                            <div style="position: absolute; top: 0; left: 0; font-size: 9px; color: #999; padding: 1px 3px; pointer-events: none;">기타수당</div>
-                            <input type="text" class="salary-cell" style="width: 90px; font-size: 11px; padding: 4px; padding-top: 12px; border: none; text-align: right;" value="${emp.otherAllowance || ''}" data-field="otherAllowance" onfocus="handleCellClick(event, '${emp.id}', 'otherAllowance')" onchange="updateSalaryCell('${emp.id}', 'otherAllowance', this.value)" placeholder="=수식">
-                        </td>
-                        <td style="padding: 0; border: 1px solid #ddd;"><input type="text" class="salary-cell" style="width: 120px; font-size: 11px; padding: 4px; border: none; text-align: right;" value="${emp.overtimePay || ''}" data-field="overtimePay" onfocus="handleCellClick(event, '${emp.id}', 'overtimePay')" onchange="updateSalaryCell('${emp.id}', 'overtimePay', this.value)" placeholder="=통상임금*1.5*연장근로시간"></td>
-                        <td style="padding: 0; border: 1px solid #ddd;"><input type="text" class="salary-cell" style="width: 120px; font-size: 11px; padding: 4px; border: none; text-align: right;" value="${emp.holidayPay || ''}" data-field="holidayPay" onfocus="handleCellClick(event, '${emp.id}', 'holidayPay')" onchange="updateSalaryCell('${emp.id}', 'holidayPay', this.value)" placeholder="=통상임금*1.5*휴일근로시간"></td>
-                        <td style="padding: 0; border: 1px solid #ddd;"><input type="text" class="salary-cell" style="width: 120px; font-size: 11px; padding: 4px; border: none; text-align: right;" value="${emp.nightPay || ''}" data-field="nightPay" onfocus="handleCellClick(event, '${emp.id}', 'nightPay')" onchange="updateSalaryCell('${emp.id}', 'nightPay', this.value)" placeholder="=통상임금*0.5*야간근로시간"></td>
-                        <td style="padding: 0; border: 1px solid #ddd; position: relative;" onclick="addCellReference(event, '${emp.id}', '고정상여')">
-                            <div style="position: absolute; top: 0; left: 0; font-size: 9px; color: #999; padding: 1px 3px; pointer-events: none;">고정상여</div>
-                            <input type="text" class="salary-cell" style="width: 90px; font-size: 11px; padding: 4px; padding-top: 12px; border: none; text-align: right;" value="${emp.fixedBonus || ''}" data-field="fixedBonus" onfocus="handleCellClick(event, '${emp.id}', 'fixedBonus')" onchange="updateSalaryCell('${emp.id}', 'fixedBonus', this.value)" placeholder="=수식">
-                        </td>
+                        <td style="padding: 4px; border: 1px solid #ddd; font-size: 11px; text-align: center; background: #f9f9f9;">${index + 1}</td>
+                        <td style="padding: 4px; border: 1px solid #ddd; font-size: 11px; background: #f9f9f9;">${emp.workLocation || '-'}</td>
+                        <td style="padding: 4px; border: 1px solid #ddd; font-size: 11px; font-weight: bold; background: #f9f9f9;">${emp.name || '-'}</td>
+                        <td style="padding: 4px; border: 1px solid #ddd; font-size: 11px; background: #f9f9f9;">${companies[emp.companyCode] || '-'}</td>
+                        <td style="padding: 4px; border: 1px solid #ddd; font-size: 11px; background: #f9f9f9;">${emp.hireDate || '-'}</td>
+                        <td style="padding: 4px; border: 1px solid #ddd; font-size: 11px; background: #f9f9f9;">${emp.jobTitle || '-'}</td>
+                        <td style="padding: 4px; border: 1px solid #ddd; font-size: 11px; background: #f9f9f9;">${depts[emp.departmentCode] || '-'}</td>
+                        <td style="padding: 0; border: 1px solid #ddd;"><input type="number" class="salary-cell" style="width: 90px; font-size: 11px; padding: 4px; border: none; text-align: right;" value="${emp.regularWage || ''}" data-field="regularWage" onchange="updateSalaryCell('${emp.id}', 'regularWage', this.value)"></td>
+                        <td style="padding: 0; border: 1px solid #ddd;"><input type="number" class="salary-cell" style="width: 90px; font-size: 11px; padding: 4px; border: none; text-align: right;" value="${emp.baseSalary || ''}" data-field="baseSalary" onchange="updateSalaryCell('${emp.id}', 'baseSalary', this.value)"></td>
+                        <td style="padding: 0; border: 1px solid #ddd;"><input type="number" class="salary-cell" style="width: 90px; font-size: 11px; padding: 4px; border: none; text-align: right;" value="${emp.carAllowance || ''}" data-field="carAllowance" onchange="updateSalaryCell('${emp.id}', 'carAllowance', this.value)"></td>
+                        <td style="padding: 0; border: 1px solid #ddd;"><input type="number" class="salary-cell" style="width: 90px; font-size: 11px; padding: 4px; border: none; text-align: right;" value="${emp.otherAllowance || ''}" data-field="otherAllowance" onchange="updateSalaryCell('${emp.id}', 'otherAllowance', this.value)"></td>
+                        <td style="padding: 0; border: 1px solid #ddd;"><input type="number" class="salary-cell" style="width: 90px; font-size: 11px; padding: 4px; border: none; text-align: right;" value="${emp.overtimePay || ''}" data-field="overtimePay" onchange="updateSalaryCell('${emp.id}', 'overtimePay', this.value)"></td>
+                        <td style="padding: 0; border: 1px solid #ddd;"><input type="number" class="salary-cell" style="width: 90px; font-size: 11px; padding: 4px; border: none; text-align: right;" value="${emp.holidayPay || ''}" data-field="holidayPay" onchange="updateSalaryCell('${emp.id}', 'holidayPay', this.value)"></td>
+                        <td style="padding: 0; border: 1px solid #ddd;"><input type="number" class="salary-cell" style="width: 90px; font-size: 11px; padding: 4px; border: none; text-align: right;" value="${emp.nightPay || ''}" data-field="nightPay" onchange="updateSalaryCell('${emp.id}', 'nightPay', this.value)"></td>
+                        <td style="padding: 0; border: 1px solid #ddd;"><input type="number" class="salary-cell" style="width: 90px; font-size: 11px; padding: 4px; border: none; text-align: right;" value="${emp.fixedBonus || ''}" data-field="fixedBonus" onchange="updateSalaryCell('${emp.id}', 'fixedBonus', this.value)"></td>
                         <td style="padding: 4px; border: 1px solid #ddd; font-size: 11px; text-align: right; font-weight: bold; background: #fffbcc;">${monthlyTotal.toLocaleString()}</td>
-                        <td style="padding: 0; border: 1px solid #ddd;"><input type="text" class="salary-cell" style="width: 100px; font-size: 11px; padding: 4px; border: none; text-align: right; font-weight: bold;" value="${emp.annualSalary || ''}" data-field="annualSalary" onchange="updateSalaryCell('${emp.id}', 'annualSalary', this.value)" placeholder="값 또는 =수식"></td>
-                        <td style="padding: 0; border: 1px solid #ddd;"><input type="text" class="salary-cell" style="width: 90px; font-size: 11px; padding: 4px; border: none; text-align: right;" value="${emp.taxFree || ''}" data-field="taxFree" onchange="updateSalaryCell('${emp.id}', 'taxFree', this.value)" placeholder="값 또는 =수식"></td>
-                        <td style="padding: 0; border: 1px solid #ddd;"><input type="text" class="salary-cell" style="width: 60px; font-size: 11px; padding: 4px; border: none; text-align: center;" value="${emp.overtimeHours || ''}" data-field="overtimeHours" onchange="updateSalaryCell('${emp.id}', 'overtimeHours', this.value)"></td>
-                        <td style="padding: 0; border: 1px solid #ddd;"><input type="text" class="salary-cell" style="width: 60px; font-size: 11px; padding: 4px; border: none; text-align: center;" value="${emp.holidayDays || ''}" data-field="holidayDays" onchange="updateSalaryCell('${emp.id}', 'holidayDays', this.value)"></td>
-                        <td style="padding: 0; border: 1px solid #ddd;"><input type="text" class="salary-cell" style="width: 60px; font-size: 11px; padding: 4px; border: none; text-align: center;" value="${emp.holidayHours || ''}" data-field="holidayHours" onchange="updateSalaryCell('${emp.id}', 'holidayHours', this.value)"></td>
-                        <td style="padding: 0; border: 1px solid #ddd;"><input type="text" class="salary-cell" style="width: 60px; font-size: 11px; padding: 4px; border: none; text-align: center;" value="${emp.nightHours || ''}" data-field="nightHours" onchange="updateSalaryCell('${emp.id}', 'nightHours', this.value)"></td>
+                        <td style="padding: 0; border: 1px solid #ddd;"><input type="number" class="salary-cell" style="width: 100px; font-size: 11px; padding: 4px; border: none; text-align: right; font-weight: bold;" value="${emp.annualSalary || ''}" data-field="annualSalary" onchange="updateSalaryCell('${emp.id}', 'annualSalary', this.value)"></td>
+                        <td style="padding: 0; border: 1px solid #ddd;"><input type="number" class="salary-cell" style="width: 90px; font-size: 11px; padding: 4px; border: none; text-align: right;" value="${emp.taxFree || ''}" data-field="taxFree" onchange="updateSalaryCell('${emp.id}', 'taxFree', this.value)"></td>
+                        <td style="padding: 0; border: 1px solid #ddd;"><input type="number" class="salary-cell" style="width: 60px; font-size: 11px; padding: 4px; border: none; text-align: center;" value="${emp.overtimeHours || ''}" data-field="overtimeHours" onchange="updateSalaryCell('${emp.id}', 'overtimeHours', this.value)"></td>
+                        <td style="padding: 0; border: 1px solid #ddd;"><input type="number" class="salary-cell" style="width: 60px; font-size: 11px; padding: 4px; border: none; text-align: center;" value="${emp.holidayDays || ''}" data-field="holidayDays" onchange="updateSalaryCell('${emp.id}', 'holidayDays', this.value)"></td>
+                        <td style="padding: 0; border: 1px solid #ddd;"><input type="number" class="salary-cell" style="width: 60px; font-size: 11px; padding: 4px; border: none; text-align: center;" value="${emp.holidayHours || ''}" data-field="holidayHours" onchange="updateSalaryCell('${emp.id}', 'holidayHours', this.value)"></td>
+                        <td style="padding: 0; border: 1px solid #ddd;"><input type="number" class="salary-cell" style="width: 60px; font-size: 11px; padding: 4px; border: none; text-align: center;" value="${emp.nightHours || ''}" data-field="nightHours" onchange="updateSalaryCell('${emp.id}', 'nightHours', this.value)"></td>
                     </tr>
                     `;
                 }).join('');
@@ -2334,6 +2322,188 @@
             link.href = URL.createObjectURL(blob);
             link.download = '연봉정보_' + new Date().toISOString().slice(0,10) + '.csv';
             link.click();
+        }
+
+        // ===== 연봉정보 엑셀 양식 다운로드 =====
+        window.downloadSalaryTemplate = async function() {
+            showLoading();
+            
+            // 직원 데이터 로드
+            const employeesSnap = await window.getDocs(window.collection(window.db, 'employees'));
+            const employees = [];
+            employeesSnap.forEach(doc => {
+                const emp = doc.data();
+                emp.id = doc.id;
+                employees.push(emp);
+            });
+            
+            // 법인 데이터 로드
+            const companiesSnap = await window.getDocs(window.collection(window.db, 'companies'));
+            const companies = {};
+            companiesSnap.forEach(doc => {
+                const c = doc.data();
+                companies[c.code] = c.name;
+            });
+            
+            // 부서 데이터 로드
+            const deptsSnap = await window.getDocs(window.collection(window.db, 'departments'));
+            const depts = {};
+            deptsSnap.forEach(doc => {
+                const d = doc.data();
+                depts[d.code] = d.name;
+            });
+            
+            // 양식 데이터 생성
+            const template = employees.map(emp => ({
+                '사번': emp.id || '',
+                '성명': emp.name || '',
+                '근무지': emp.workLocation || '',
+                '법인명': companies[emp.companyCode] || '',
+                '입사일': emp.hireDate || '',
+                '직위': emp.jobTitle || '',
+                '부서': depts[emp.departmentCode] || '',
+                '통상임금': emp.regularWage || '',
+                '기본급': emp.baseSalary || '',
+                '차량보조비': emp.carAllowance || '',
+                '기타수당': emp.otherAllowance || '',
+                '연장근로수당': emp.overtimePay || '',
+                '휴일근로수당': emp.holidayPay || '',
+                '야간근로수당': emp.nightPay || '',
+                '고정상여': emp.fixedBonus || '',
+                '연봉': emp.annualSalary || '',
+                '비과세': emp.taxFree || '',
+                '연장근로시간': emp.overtimeHours || '',
+                '휴일근로일': emp.holidayDays || '',
+                '휴일근로시간': emp.holidayHours || '',
+                '야간근로시간': emp.nightHours || ''
+            }));
+            
+            if (template.length === 0) {
+                // 빈 양식 생성
+                template.push({
+                    '사번': '(사번을 입력하세요)',
+                    '성명': '',
+                    '근무지': '',
+                    '법인명': '',
+                    '입사일': '',
+                    '직위': '',
+                    '부서': '',
+                    '통상임금': '',
+                    '기본급': '',
+                    '차량보조비': '',
+                    '기타수당': '',
+                    '연장근로수당': '',
+                    '휴일근로수당': '',
+                    '야간근로수당': '',
+                    '고정상여': '',
+                    '연봉': '',
+                    '비과세': '',
+                    '연장근로시간': '',
+                    '휴일근로일': '',
+                    '휴일근로시간': '',
+                    '야간근로시간': ''
+                });
+            }
+            
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.json_to_sheet(template);
+            
+            // 컬럼 너비 설정
+            ws['!cols'] = [
+                {wch: 12}, {wch: 10}, {wch: 10}, {wch: 15}, {wch: 12},
+                {wch: 10}, {wch: 12}, {wch: 12}, {wch: 12}, {wch: 12},
+                {wch: 12}, {wch: 12}, {wch: 12}, {wch: 12}, {wch: 12},
+                {wch: 12}, {wch: 12}, {wch: 12}, {wch: 12}, {wch: 12}, {wch: 12}
+            ];
+            
+            XLSX.utils.book_append_sheet(wb, ws, '연봉정보');
+            XLSX.writeFile(wb, 'GA_KOREA_연봉정보_양식.xlsx');
+            
+            hideLoading();
+        }
+
+        // ===== 연봉정보 엑셀 업로드 =====
+        window.handleSalaryExcelUpload = async function(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            showLoading();
+
+            try {
+                const data = await file.arrayBuffer();
+                const workbook = XLSX.read(data);
+                const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                const jsonData = XLSX.utils.sheet_to_json(firstSheet);
+
+                console.log('연봉정보 엑셀 데이터:', jsonData);
+
+                if (jsonData.length === 0) {
+                    alert('엑셀 파일에 데이터가 없습니다.');
+                    hideLoading();
+                    return;
+                }
+
+                let updatedCount = 0;
+                let errorCount = 0;
+
+                for (const row of jsonData) {
+                    const empId = row['사번'];
+                    if (!empId || empId === '(사번을 입력하세요)') {
+                        errorCount++;
+                        continue;
+                    }
+
+                    // 해당 직원 데이터 조회
+                    const empDocRef = window.doc(window.db, 'employees', String(empId));
+                    const empDoc = await window.getDoc(empDocRef);
+                    
+                    if (!empDoc.exists()) {
+                        console.warn(`사번 ${empId} 직원을 찾을 수 없습니다.`);
+                        errorCount++;
+                        continue;
+                    }
+
+                    // 연봉정보 업데이트
+                    const updateData = {
+                        regularWage: row['통상임금'] || '',
+                        baseSalary: row['기본급'] || '',
+                        carAllowance: row['차량보조비'] || '',
+                        otherAllowance: row['기타수당'] || '',
+                        overtimePay: row['연장근로수당'] || '',
+                        holidayPay: row['휴일근로수당'] || '',
+                        nightPay: row['야간근로수당'] || '',
+                        fixedBonus: row['고정상여'] || '',
+                        annualSalary: row['연봉'] || '',
+                        taxFree: row['비과세'] || '',
+                        overtimeHours: row['연장근로시간'] || '',
+                        holidayDays: row['휴일근로일'] || '',
+                        holidayHours: row['휴일근로시간'] || '',
+                        nightHours: row['야간근로시간'] || ''
+                    };
+
+                    await window.setDoc(empDocRef, updateData, { merge: true });
+                    updatedCount++;
+                }
+
+                hideLoading();
+                
+                let message = `✅ 연봉정보 업로드 완료!\n\n`;
+                message += `업데이트: ${updatedCount}명\n`;
+                if (errorCount > 0) {
+                    message += `실패: ${errorCount}건 (사번 오류 또는 미등록 직원)`;
+                }
+                alert(message);
+                
+                loadSalaryInfo();
+                
+            } catch (error) {
+                console.error('연봉정보 엑셀 업로드 오류:', error);
+                alert('❌ 업로드 오류: ' + error.message);
+                hideLoading();
+            }
+            
+            // 파일 입력 초기화
+            event.target.value = '';
         }
 
         // ===== 법인 관리 =====
