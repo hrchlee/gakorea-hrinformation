@@ -1307,6 +1307,14 @@
             return String(excelDate);
         }
         
+        // 사번 자동 생성 함수
+        function generateEmployeeId() {
+            const year = new Date().getFullYear().toString().slice(2);
+            const month = String(new Date().getMonth() + 1).padStart(2, '0');
+            const random = String(Math.floor(Math.random() * 10000)).padStart(4, '0');
+            return year + month + random;
+        }
+        
         window.handleExcelUpload = async function(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -1471,13 +1479,6 @@
                         errors.push(`${i+2}행: ${error.message}`);
                         errorCount++;
                     }
-                }
-
-                function generateEmployeeId() {
-                    const year = new Date().getFullYear().toString().slice(2);
-                    const month = String(new Date().getMonth() + 1).padStart(2, '0');
-                    const random = String(Math.floor(Math.random() * 10000)).padStart(4, '0');
-                    return year + month + random;
                 }
 
                 hideLoading();
