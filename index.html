@@ -135,14 +135,11 @@
             <div class="sidebar">
                 <div class="filter-section">
                     <h3>검색</h3>
-                    <input type="text" id="search-employee" placeholder="이름/사번..." onkeypress="if(event.key==='Enter') window.filterEmployees()" style="width: 100%;">
+                    <input type="text" id="search-employee" placeholder="이름/사번..." oninput="filterEmployees()">
                 </div>
                 <div class="filter-section">
                     <h3>법인</h3>
-                    <select id="filter-company" style="width: 100%;"></select>
-                </div>
-                <div class="filter-section">
-                    <button onclick="window.filterEmployees()" style="width: 100%; padding: 10px; background: #1976d2; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 13px; font-weight: bold;">🔍 검색</button>
+                    <select id="filter-company" onchange="filterEmployees()"></select>
                 </div>
                 <div style="padding: 0 15px 10px; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid #e0e0e0;">
                     <input type="checkbox" id="select-all-checkbox" onclick="toggleSelectAll()" style="width: 16px; height: 16px; cursor: pointer;">
@@ -246,6 +243,9 @@
                     </select>
                     <select id="salary-position-filter" onchange="filterSalaryInfo()" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
                         <option value="">전체 직급</option>
+                    </select>
+                    <select id="salary-jobtitle-filter" onchange="filterSalaryInfo()" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                        <option value="">전체 직위</option>
                     </select>
                     <div style="margin-left: auto; display: flex; gap: 10px;">
                         <button class="btn btn-outline" onclick="downloadSalaryTemplate()">📥 연봉 양식 다운로드</button>
@@ -688,15 +688,13 @@
             snapshot.forEach(doc => {
                 allEmployees.push({ id: doc.id, ...doc.data() });
             });
-            window.filterEmployees();
+            filterEmployees();
             hideLoading();
         }
 
-        window.filterEmployees = function() {
+        function filterEmployees() {
             const search = document.getElementById('search-employee').value.toLowerCase();
             const company = document.getElementById('filter-company').value;
-            
-            console.log('🔍 검색 조건:', { search, company, totalEmployees: allEmployees.length });
             
             let filtered = allEmployees.filter(emp => {
                 const matchSearch = !search || (emp.name && emp.name.toLowerCase().includes(search)) || (emp.id && emp.id.includes(search));
@@ -705,7 +703,6 @@
                 return matchSearch && matchCompany;
             });
             
-            console.log('✅ 필터링 결과:', filtered.length + '명');
             renderEmployeeList(filtered);
         }
 
@@ -793,37 +790,13 @@
             });
         }
 
-        window.selectEmployee = async function(id) {
+        window.selectEmployee = function(id) {
             const emp = allEmployees.find(e => e.id === id);
             if (!emp) return;
             
             // 법인명, 부서명 조회
-            let companyName = emp.companyCode || '-';
-            let deptName = emp.departmentCode || '-';
-            
-            // Firebase에서 법인명 조회
-            if (emp.companyCode) {
-                try {
-                    const companyDoc = await window.getDoc(window.doc(window.db, 'companies', emp.companyCode));
-                    if (companyDoc.exists()) {
-                        companyName = companyDoc.data().name;
-                    }
-                } catch (e) {
-                    console.error('법인 조회 오류:', e);
-                }
-            }
-            
-            // Firebase에서 부서명 조회
-            if (emp.departmentCode) {
-                try {
-                    const deptDoc = await window.getDoc(window.doc(window.db, 'departments', emp.departmentCode));
-                    if (deptDoc.exists()) {
-                        deptName = deptDoc.data().name;
-                    }
-                } catch (e) {
-                    console.error('부서 조회 오류:', e);
-                }
-            }
+            let companyName = emp.companyCode;
+            let deptName = emp.departmentCode;
             
             document.getElementById('employee-detail').innerHTML = `
                 <div style="max-width: 1200px;">
@@ -1091,7 +1064,7 @@
                         <table class="form-table">
                             <tr>
                                 <th class="required">사번</th>
-                                <td><input name="employeeId" value="${emp?.id || ''}" ${emp ? 'readonly' : ''} required placeholder="사번을 입력하세요"></td>
+                                <td><input name="employeeId" value="${emp?.id || generateId()}" ${emp ? 'readonly' : ''} required></td>
                                 <th>영문 사번</th>
                                 <td><input name="employeeIdEn" value="${emp?.employeeIdEn || ''}"></td>
                             </tr>
@@ -1401,15 +1374,8 @@
                 
                 console.log('저장 데이터:', data);
                 
-                // 사번 필수 체크
-                if (!data.employeeId) {
-                    alert('❌ 사번을 입력해주세요.');
-                    hideLoading();
-                    return;
-                }
-                
                 // employeeId를 문서 ID로 사용
-                const docId = data.employeeId;
+                const docId = data.employeeId || generateId();
                 await window.setDoc(window.doc(window.db, 'employees', docId), data);
                 
                 alert('✅ 저장되었습니다!');
@@ -1711,6 +1677,7 @@
         async function loadRoster() {
             showLoading();
             
+            // 현재 필터 값 저장
             const companyFilter = document.getElementById('roster-company-filter').value;
             const locationFilter = document.getElementById('roster-location-filter').value;
             const positionFilter = document.getElementById('roster-position-filter').value;
@@ -1746,58 +1713,58 @@
                 if (emp.jobTitle) jobTitles.add(emp.jobTitle);
             });
             
-            // 법인 필터 업데이트
+            // 법인 필터 업데이트 (값 유지하면서 재생성)
             const companySelect = document.getElementById('roster-company-filter');
-            if (companySelect.options.length === 1) {
-                Object.entries(companies).forEach(([code, name]) => {
-                    const option = document.createElement('option');
-                    option.value = code;
-                    option.textContent = name;
-                    companySelect.appendChild(option);
-                });
-            }
+            companySelect.innerHTML = '<option value="">전체 법인</option>';
+            Object.entries(companies).forEach(([code, name]) => {
+                const option = document.createElement('option');
+                option.value = code;
+                option.textContent = name;
+                companySelect.appendChild(option);
+            });
+            companySelect.value = companyFilter;
             
             // 근무지 필터 업데이트
             const locationSelect = document.getElementById('roster-location-filter');
-            if (locationSelect.options.length === 1) {
-                Array.from(locations).sort().forEach(loc => {
-                    const option = document.createElement('option');
-                    option.value = loc;
-                    option.textContent = loc;
-                    locationSelect.appendChild(option);
-                });
-            }
+            locationSelect.innerHTML = '<option value="">전체 근무지</option>';
+            Array.from(locations).sort().forEach(loc => {
+                const option = document.createElement('option');
+                option.value = loc;
+                option.textContent = loc;
+                locationSelect.appendChild(option);
+            });
+            locationSelect.value = locationFilter;
             
             // 직급 필터 업데이트
             const positionSelect = document.getElementById('roster-position-filter');
-            if (positionSelect.options.length === 1) {
-                const positionOrder = ['인턴', '사원', '주임', '대리', '과장', '차장', '부장', '이사'];
-                const sortedPositions = Array.from(positions).sort((a, b) => {
-                    const idxA = positionOrder.indexOf(a);
-                    const idxB = positionOrder.indexOf(b);
-                    if (idxA === -1 && idxB === -1) return a.localeCompare(b);
-                    if (idxA === -1) return 1;
-                    if (idxB === -1) return -1;
-                    return idxA - idxB;
-                });
-                sortedPositions.forEach(pos => {
-                    const option = document.createElement('option');
-                    option.value = pos;
-                    option.textContent = pos;
-                    positionSelect.appendChild(option);
-                });
-            }
+            positionSelect.innerHTML = '<option value="">전체 직급</option>';
+            const positionOrder = ['인턴', '사원', '주임', '대리', '과장', '차장', '부장', '이사'];
+            const sortedPositions = Array.from(positions).sort((a, b) => {
+                const idxA = positionOrder.indexOf(a);
+                const idxB = positionOrder.indexOf(b);
+                if (idxA === -1 && idxB === -1) return a.localeCompare(b);
+                if (idxA === -1) return 1;
+                if (idxB === -1) return -1;
+                return idxA - idxB;
+            });
+            sortedPositions.forEach(pos => {
+                const option = document.createElement('option');
+                option.value = pos;
+                option.textContent = pos;
+                positionSelect.appendChild(option);
+            });
+            positionSelect.value = positionFilter;
             
             // 직위 필터 업데이트
             const jobTitleSelect = document.getElementById('roster-jobtitle-filter');
-            if (jobTitleSelect.options.length === 1) {
-                Array.from(jobTitles).sort().forEach(title => {
-                    const option = document.createElement('option');
-                    option.value = title;
-                    option.textContent = title;
-                    jobTitleSelect.appendChild(option);
-                });
-            }
+            jobTitleSelect.innerHTML = '<option value="">전체 직위</option>';
+            Array.from(jobTitles).sort().forEach(title => {
+                const option = document.createElement('option');
+                option.value = title;
+                option.textContent = title;
+                jobTitleSelect.appendChild(option);
+            });
+            jobTitleSelect.value = jobTitleFilter;
             
             // 필터링
             if (companyFilter) {
@@ -2235,6 +2202,22 @@
             });
             positionSelect.value = currentPositionValue;
             
+            // 직위 필터 업데이트
+            const jobTitles = new Set();
+            allSalaryEmployees.forEach(emp => {
+                if (emp.jobTitle) jobTitles.add(emp.jobTitle);
+            });
+            const jobTitleSelect = document.getElementById('salary-jobtitle-filter');
+            const currentJobTitleValue = jobTitleSelect.value;
+            jobTitleSelect.innerHTML = '<option value="">전체 직위</option>';
+            Array.from(jobTitles).sort().forEach(title => {
+                const option = document.createElement('option');
+                option.value = title;
+                option.textContent = title;
+                jobTitleSelect.appendChild(option);
+            });
+            jobTitleSelect.value = currentJobTitleValue;
+            
             // 정렬 설정 로드
             const settingsDoc = await window.getDoc(window.doc(window.db, 'settings', 'master'));
             salarySettings = {
@@ -2260,6 +2243,7 @@
             const companyFilter = document.getElementById('salary-company-filter').value;
             const locationFilter = document.getElementById('salary-location-filter').value;
             const positionFilter = document.getElementById('salary-position-filter').value;
+            const jobTitleFilter = document.getElementById('salary-jobtitle-filter').value;
             
             let employees = [...allSalaryEmployees];
             
@@ -2274,6 +2258,9 @@
             }
             if (positionFilter) {
                 employees = employees.filter(e => e.position === positionFilter);
+            }
+            if (jobTitleFilter) {
+                employees = employees.filter(e => e.jobTitle === jobTitleFilter);
             }
             
             // 임원/자문/고문 우선 정렬
