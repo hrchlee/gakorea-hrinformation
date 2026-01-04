@@ -135,7 +135,10 @@
             <div class="sidebar">
                 <div class="filter-section">
                     <h3>검색</h3>
-                    <input type="text" id="search-employee" placeholder="이름/사번..." oninput="filterEmployees()">
+                    <div style="display: flex; gap: 5px;">
+                        <input type="text" id="search-employee" placeholder="이름/사번..." onkeypress="if(event.key==='Enter') filterEmployees()" style="flex: 1;">
+                        <button onclick="filterEmployees()" style="padding: 8px 12px; background: #1976d2; color: white; border: none; border-radius: 3px; cursor: pointer; white-space: nowrap;">🔍 검색</button>
+                    </div>
                 </div>
                 <div class="filter-section">
                     <h3>법인</h3>
@@ -693,6 +696,8 @@
             const search = document.getElementById('search-employee').value.toLowerCase();
             const company = document.getElementById('filter-company').value;
             
+            console.log('🔍 검색 조건:', { search, company, totalEmployees: allEmployees.length });
+            
             let filtered = allEmployees.filter(emp => {
                 const matchSearch = !search || (emp.name && emp.name.toLowerCase().includes(search)) || (emp.id && emp.id.includes(search));
                 // GA KOREA(C001)는 통합법인으로 모든 직원 조회
@@ -700,6 +705,7 @@
                 return matchSearch && matchCompany;
             });
             
+            console.log('✅ 필터링 결과:', filtered.length + '명');
             renderEmployeeList(filtered);
         }
 
