@@ -787,13 +787,37 @@
             });
         }
 
-        window.selectEmployee = function(id) {
+        window.selectEmployee = async function(id) {
             const emp = allEmployees.find(e => e.id === id);
             if (!emp) return;
             
             // 법인명, 부서명 조회
-            let companyName = emp.companyCode;
-            let deptName = emp.departmentCode;
+            let companyName = emp.companyCode || '-';
+            let deptName = emp.departmentCode || '-';
+            
+            // Firebase에서 법인명 조회
+            if (emp.companyCode) {
+                try {
+                    const companyDoc = await window.getDoc(window.doc(window.db, 'companies', emp.companyCode));
+                    if (companyDoc.exists()) {
+                        companyName = companyDoc.data().name;
+                    }
+                } catch (e) {
+                    console.error('법인 조회 오류:', e);
+                }
+            }
+            
+            // Firebase에서 부서명 조회
+            if (emp.departmentCode) {
+                try {
+                    const deptDoc = await window.getDoc(window.doc(window.db, 'departments', emp.departmentCode));
+                    if (deptDoc.exists()) {
+                        deptName = deptDoc.data().name;
+                    }
+                } catch (e) {
+                    console.error('부서 조회 오류:', e);
+                }
+            }
             
             document.getElementById('employee-detail').innerHTML = `
                 <div style="max-width: 1200px;">
@@ -1061,7 +1085,7 @@
                         <table class="form-table">
                             <tr>
                                 <th class="required">사번</th>
-                                <td><input name="employeeId" value="${emp?.id || generateId()}" ${emp ? 'readonly' : ''} required></td>
+                                <td><input name="employeeId" value="${emp?.id || ''}" ${emp ? 'readonly' : ''} required placeholder="사번을 입력하세요"></td>
                                 <th>영문 사번</th>
                                 <td><input name="employeeIdEn" value="${emp?.employeeIdEn || ''}"></td>
                             </tr>
@@ -1371,8 +1395,15 @@
                 
                 console.log('저장 데이터:', data);
                 
+                // 사번 필수 체크
+                if (!data.employeeId) {
+                    alert('❌ 사번을 입력해주세요.');
+                    hideLoading();
+                    return;
+                }
+                
                 // employeeId를 문서 ID로 사용
-                const docId = data.employeeId || generateId();
+                const docId = data.employeeId;
                 await window.setDoc(window.doc(window.db, 'employees', docId), data);
                 
                 alert('✅ 저장되었습니다!');
