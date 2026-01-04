@@ -232,7 +232,7 @@
 
         <!-- 조직도 탭 -->
         <div id="org-chart-tab" class="layout" style="display: none;">
-            <div style="display: flex; height: calc(100vh - 60px);">
+            <div style="display: flex; height: calc(100vh - 60px); width: 100%;">
                 <!-- 조직도 메인 영역 -->
                 <div id="org-chart-main" style="flex: 1; background: #fff; position: relative; overflow: auto;">
                     <!-- 상단 정보 -->
@@ -252,6 +252,8 @@
                     
                     <!-- 조직도 캔버스 영역 -->
                     <div id="org-chart-canvas" style="width: 100%; min-height: 800px; position: relative; padding: 20px;" oncontextmenu="showOrgChartContextMenu(event); return false;">
+                        <!-- SVG 연결선 레이어 -->
+                        <svg id="org-chart-svg" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1;"></svg>
                         <!-- 조직도 요소들이 여기에 동적으로 생성됨 -->
                     </div>
                 </div>
@@ -3201,11 +3203,13 @@
         }
 
         // ===== 조직도 기능 =====
-        let orgChartData = { departments: [], employees: [] };
+        let orgChartData = { departments: [], connections: [] };
         let contextMenuPosition = { x: 0, y: 0 };
         let selectedDeptColor = '#1976d2';
         let allOrgEmployees = [];
         let draggedEmployee = null;
+        let connectingFrom = null; // 연결 시작 부서
+        let connectingFromSide = null; // 연결 시작 방향
 
         // 조직도 로드
         async function loadOrgChart() {
@@ -3246,6 +3250,7 @@
                 const orgDoc = await window.getDoc(window.doc(window.db, 'settings', 'orgChart'));
                 if (orgDoc.exists()) {
                     orgChartData = orgDoc.data();
+                    if (!orgChartData.connections) orgChartData.connections = [];
                     renderOrgChart();
                 }
             } catch (e) {
@@ -3256,7 +3261,10 @@
         // 조직도 렌더링
         function renderOrgChart() {
             const canvas = document.getElementById('org-chart-canvas');
+            // SVG 유지하고 다른 요소만 제거
+            const svg = document.getElementById('org-chart-svg');
             canvas.innerHTML = '';
+            canvas.appendChild(svg);
             
             // 부서 박스 렌더링
             if (orgChartData.departments) {
@@ -3264,6 +3272,9 @@
                     createDeptElement(dept, index);
                 });
             }
+            
+            // 연결선 렌더링
+            renderConnections();
         }
 
         // 부서 요소 생성
@@ -3283,6 +3294,7 @@
                 border-radius: 4px;
                 cursor: move;
                 box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+                z-index: 10;
             `;
             
             deptEl.innerHTML = `
@@ -3299,12 +3311,51 @@
                         </div>
                     `).join('') : ''}
                 </div>
-                <button onclick="deleteDept(${index})" style="position: absolute; top: -8px; right: -8px; width: 20px; height: 20px; border-radius: 50%; border: none; background: #ff5252; color: white; cursor: pointer; font-size: 12px; display: none;">✕</button>
+                <!-- 연결점 -->
+                <div class="connect-point connect-top" data-side="top" style="display: none; position: absolute; top: -6px; left: 50%; transform: translateX(-50%); width: 12px; height: 12px; background: #1976d2; border-radius: 50%; cursor: crosshair; z-index: 20;"></div>
+                <div class="connect-point connect-bottom" data-side="bottom" style="display: none; position: absolute; bottom: -6px; left: 50%; transform: translateX(-50%); width: 12px; height: 12px; background: #1976d2; border-radius: 50%; cursor: crosshair; z-index: 20;"></div>
+                <div class="connect-point connect-left" data-side="left" style="display: none; position: absolute; left: -6px; top: 50%; transform: translateY(-50%); width: 12px; height: 12px; background: #1976d2; border-radius: 50%; cursor: crosshair; z-index: 20;"></div>
+                <div class="connect-point connect-right" data-side="right" style="display: none; position: absolute; right: -6px; top: 50%; transform: translateY(-50%); width: 12px; height: 12px; background: #1976d2; border-radius: 50%; cursor: crosshair; z-index: 20;"></div>
+                <button class="delete-dept-btn" onclick="deleteDept(${index})" style="position: absolute; top: -8px; right: -8px; width: 20px; height: 20px; border-radius: 50%; border: none; background: #ff5252; color: white; cursor: pointer; font-size: 12px; display: none; z-index: 25;">✕</button>
             `;
             
-            // 마우스 오버 시 삭제 버튼 표시
-            deptEl.onmouseenter = () => deptEl.querySelector('button:last-child').style.display = 'block';
-            deptEl.onmouseleave = () => deptEl.querySelector('button:last-child').style.display = 'none';
+            // 마우스 오버 시 연결점과 삭제 버튼 표시
+            deptEl.onmouseenter = () => {
+                deptEl.querySelectorAll('.connect-point').forEach(p => p.style.display = 'block');
+                deptEl.querySelector('.delete-dept-btn').style.display = 'block';
+            };
+            deptEl.onmouseleave = () => {
+                if (!connectingFrom) {
+                    deptEl.querySelectorAll('.connect-point').forEach(p => p.style.display = 'none');
+                }
+                deptEl.querySelector('.delete-dept-btn').style.display = 'none';
+            };
+            
+            // 연결점 클릭 이벤트
+            deptEl.querySelectorAll('.connect-point').forEach(point => {
+                point.onclick = (e) => {
+                    e.stopPropagation();
+                    const side = point.dataset.side;
+                    
+                    if (!connectingFrom) {
+                        // 연결 시작
+                        connectingFrom = index;
+                        connectingFromSide = side;
+                        point.style.background = '#ff9800';
+                        // 모든 부서의 연결점 표시
+                        document.querySelectorAll('.org-dept-box').forEach(box => {
+                            box.querySelectorAll('.connect-point').forEach(p => p.style.display = 'block');
+                        });
+                    } else if (connectingFrom !== index) {
+                        // 연결 완료
+                        addConnection(connectingFrom, connectingFromSide, index, side);
+                        resetConnecting();
+                    } else {
+                        // 같은 부서 클릭 - 취소
+                        resetConnecting();
+                    }
+                };
+            });
             
             // 드래그 이동
             makeDraggable(deptEl, index);
@@ -3329,13 +3380,158 @@
             canvas.appendChild(deptEl);
         }
 
+        // 연결 상태 초기화
+        function resetConnecting() {
+            connectingFrom = null;
+            connectingFromSide = null;
+            document.querySelectorAll('.connect-point').forEach(p => {
+                p.style.background = '#1976d2';
+                p.style.display = 'none';
+            });
+        }
+
+        // 연결 추가
+        function addConnection(fromIndex, fromSide, toIndex, toSide) {
+            if (!orgChartData.connections) orgChartData.connections = [];
+            
+            // 중복 체크
+            const exists = orgChartData.connections.some(c => 
+                (c.from === fromIndex && c.to === toIndex) || 
+                (c.from === toIndex && c.to === fromIndex)
+            );
+            if (exists) return;
+            
+            orgChartData.connections.push({
+                from: fromIndex,
+                fromSide: fromSide,
+                to: toIndex,
+                toSide: toSide
+            });
+            
+            saveOrgChart();
+            renderConnections();
+        }
+
+        // 연결선 렌더링
+        function renderConnections() {
+            const svg = document.getElementById('org-chart-svg');
+            svg.innerHTML = '';
+            
+            if (!orgChartData.connections) return;
+            
+            orgChartData.connections.forEach((conn, index) => {
+                const fromDept = document.querySelector(`.org-dept-box[data-index="${conn.from}"]`);
+                const toDept = document.querySelector(`.org-dept-box[data-index="${conn.to}"]`);
+                
+                if (!fromDept || !toDept) return;
+                
+                const fromPos = getConnectionPoint(fromDept, conn.fromSide);
+                const toPos = getConnectionPoint(toDept, conn.toSide);
+                
+                // 선 그리기
+                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                line.setAttribute('x1', fromPos.x);
+                line.setAttribute('y1', fromPos.y);
+                line.setAttribute('x2', toPos.x);
+                line.setAttribute('y2', toPos.y);
+                line.setAttribute('stroke', '#333');
+                line.setAttribute('stroke-width', '2');
+                line.setAttribute('data-conn-index', index);
+                line.style.pointerEvents = 'stroke';
+                line.style.cursor = 'pointer';
+                
+                svg.appendChild(line);
+                
+                // 삭제 버튼 (선 중간에)
+                const midX = (fromPos.x + toPos.x) / 2;
+                const midY = (fromPos.y + toPos.y) / 2;
+                
+                const deleteBtn = document.createElement('div');
+                deleteBtn.className = 'conn-delete-btn';
+                deleteBtn.dataset.connIndex = index;
+                deleteBtn.style.cssText = `
+                    position: absolute;
+                    left: ${midX - 12}px;
+                    top: ${midY - 12}px;
+                    width: 24px;
+                    height: 24px;
+                    background: #ff5252;
+                    border-radius: 50%;
+                    display: none;
+                    justify-content: center;
+                    align-items: center;
+                    cursor: pointer;
+                    z-index: 15;
+                    color: white;
+                    font-size: 12px;
+                `;
+                deleteBtn.innerHTML = '🗑';
+                deleteBtn.onclick = () => deleteConnection(index);
+                
+                document.getElementById('org-chart-canvas').appendChild(deleteBtn);
+            });
+            
+            // 선에 마우스 가까이하면 삭제 버튼 표시
+            setupConnectionHover();
+        }
+
+        // 연결점 좌표 계산
+        function getConnectionPoint(element, side) {
+            const rect = element.getBoundingClientRect();
+            const canvas = document.getElementById('org-chart-canvas');
+            const canvasRect = canvas.getBoundingClientRect();
+            
+            const x = rect.left - canvasRect.left + canvas.scrollLeft;
+            const y = rect.top - canvasRect.top + canvas.scrollTop;
+            const w = rect.width;
+            const h = rect.height;
+            
+            switch (side) {
+                case 'top': return { x: x + w/2, y: y };
+                case 'bottom': return { x: x + w/2, y: y + h };
+                case 'left': return { x: x, y: y + h/2 };
+                case 'right': return { x: x + w, y: y + h/2 };
+                default: return { x: x + w/2, y: y + h/2 };
+            }
+        }
+
+        // 연결선 호버 이벤트 설정
+        function setupConnectionHover() {
+            const canvas = document.getElementById('org-chart-canvas');
+            
+            canvas.onmousemove = (e) => {
+                const rect = canvas.getBoundingClientRect();
+                const mouseX = e.clientX - rect.left + canvas.scrollLeft;
+                const mouseY = e.clientY - rect.top + canvas.scrollTop;
+                
+                document.querySelectorAll('.conn-delete-btn').forEach(btn => {
+                    const btnX = parseFloat(btn.style.left) + 12;
+                    const btnY = parseFloat(btn.style.top) + 12;
+                    const dist = Math.sqrt(Math.pow(mouseX - btnX, 2) + Math.pow(mouseY - btnY, 2));
+                    
+                    if (dist < 50) {
+                        btn.style.display = 'flex';
+                    } else {
+                        btn.style.display = 'none';
+                    }
+                });
+            };
+        }
+
+        // 연결 삭제
+        window.deleteConnection = function(index) {
+            orgChartData.connections.splice(index, 1);
+            saveOrgChart();
+            renderOrgChart();
+        }
+
         // 드래그 가능하게 만들기
         function makeDraggable(element, deptIndex) {
             let isDragging = false;
             let startX, startY, initialX, initialY;
             
             element.onmousedown = (e) => {
-                if (e.target.tagName === 'BUTTON' || e.target.closest('.dept-members')) return;
+                if (e.target.tagName === 'BUTTON' || e.target.closest('.dept-members') || e.target.classList.contains('connect-point')) return;
                 
                 isDragging = true;
                 startX = e.clientX;
@@ -3353,12 +3549,15 @@
                 
                 element.style.left = (initialX + dx) + 'px';
                 element.style.top = (initialY + dy) + 'px';
+                
+                // 연결선 실시간 업데이트
+                renderConnections();
             });
             
             document.addEventListener('mouseup', () => {
                 if (isDragging) {
                     isDragging = false;
-                    element.style.zIndex = '';
+                    element.style.zIndex = 10;
                     
                     // 위치 저장
                     orgChartData.departments[deptIndex].x = element.offsetLeft;
@@ -3371,6 +3570,10 @@
         // 컨텍스트 메뉴 표시
         window.showOrgChartContextMenu = function(e) {
             e.preventDefault();
+            
+            // 부서 박스나 연결점 위에서는 컨텍스트 메뉴 표시 안함
+            if (e.target.closest('.org-dept-box') || e.target.classList.contains('connect-point')) return;
+            
             const menu = document.getElementById('org-context-menu');
             
             // 캔버스 영역 내 좌표 계산
@@ -3387,8 +3590,14 @@
         }
 
         // 컨텍스트 메뉴 숨기기
-        document.addEventListener('click', () => {
-            document.getElementById('org-context-menu').style.display = 'none';
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('#org-context-menu')) {
+                document.getElementById('org-context-menu').style.display = 'none';
+            }
+            // 연결 모드에서 빈 공간 클릭 시 취소
+            if (connectingFrom !== null && !e.target.classList.contains('connect-point')) {
+                resetConnecting();
+            }
         });
 
         // 부서 생성 모달 표시
@@ -3441,6 +3650,16 @@
         // 부서 삭제
         window.deleteDept = function(index) {
             if (!confirm('이 부서를 삭제하시겠습니까?')) return;
+            
+            // 관련 연결선도 삭제
+            orgChartData.connections = orgChartData.connections.filter(c => c.from !== index && c.to !== index);
+            
+            // 인덱스 조정
+            orgChartData.connections = orgChartData.connections.map(c => ({
+                ...c,
+                from: c.from > index ? c.from - 1 : c.from,
+                to: c.to > index ? c.to - 1 : c.to
+            }));
             
             orgChartData.departments.splice(index, 1);
             saveOrgChart();
