@@ -76,6 +76,7 @@
         .spinner { border: 4px solid #f3f3f3; border-top: 4px solid #1976d2; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         .radio-group { display: flex; gap: 10px; }
+        .context-menu-item:hover { background: #f5f9ff; color: #1976d2; }
     </style>
 </head>
 <body>
@@ -124,6 +125,7 @@
                 임직원 정보
                 <div class="dropdown-menu">
                     <div class="dropdown-item" onclick="switchMainTab('employee-roster')">임직원 명부</div>
+                    <div class="dropdown-item" onclick="switchMainTab('org-chart')">조직도</div>
                     <div class="dropdown-item" onclick="switchMainTab('employee-record')">인사기록카드</div>
                 </div>
             </button>
@@ -225,6 +227,82 @@
             <div class="main-content" style="padding: 30px;">
                 <h2>인사기록카드</h2>
                 <div class="empty-state"><p>준비 중입니다</p></div>
+            </div>
+        </div>
+
+        <!-- 조직도 탭 -->
+        <div id="org-chart-tab" class="layout" style="display: none;">
+            <div style="display: flex; height: calc(100vh - 60px);">
+                <!-- 조직도 메인 영역 -->
+                <div id="org-chart-main" style="flex: 1; background: #fff; position: relative; overflow: auto;">
+                    <!-- 상단 정보 -->
+                    <div style="display: flex; justify-content: space-between; padding: 20px 30px; border-bottom: 1px solid #e0e0e0;">
+                        <div id="org-chart-info" style="font-size: 13px; line-height: 1.8;">
+                            <div>기준일 : <span id="org-chart-date"></span></div>
+                            <div>총인원 : <span id="org-chart-total">0</span>명</div>
+                            <div>특이사항 : <span id="org-chart-special">-</span></div>
+                        </div>
+                        <div style="text-align: center; flex: 1;">
+                            <h1 style="font-size: 28px; font-weight: bold; color: #333; margin: 0;">GA KOREA 조직도</h1>
+                        </div>
+                        <div style="font-size: 13px; text-align: right;">
+                            <div>기준일 : <span id="org-chart-date2"></span></div>
+                        </div>
+                    </div>
+                    
+                    <!-- 조직도 캔버스 영역 -->
+                    <div id="org-chart-canvas" style="width: 100%; min-height: 800px; position: relative; padding: 20px;" oncontextmenu="showOrgChartContextMenu(event); return false;">
+                        <!-- 조직도 요소들이 여기에 동적으로 생성됨 -->
+                    </div>
+                </div>
+                
+                <!-- 임직원 패널 (기본 숨김) -->
+                <div id="org-chart-employee-panel" style="width: 280px; background: #f5f5f5; border-left: 1px solid #ddd; display: none; flex-direction: column;">
+                    <div style="padding: 15px; border-bottom: 1px solid #ddd; display: flex; justify-content: space-between; align-items: center;">
+                        <h3 style="margin: 0; font-size: 14px;">임직원 목록</h3>
+                        <button onclick="hideEmployeePanel()" style="background: none; border: none; cursor: pointer; font-size: 18px;">✕</button>
+                    </div>
+                    <div style="padding: 10px;">
+                        <input type="text" id="org-employee-search" placeholder="이름 검색..." oninput="filterOrgEmployees()" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;">
+                    </div>
+                    <div id="org-employee-list" style="flex: 1; overflow-y: auto; padding: 10px;">
+                        <!-- 임직원 목록 -->
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 우클릭 컨텍스트 메뉴 -->
+            <div id="org-context-menu" style="display: none; position: fixed; background: white; border: 1px solid #ddd; border-radius: 4px; box-shadow: 0 2px 10px rgba(0,0,0,0.15); z-index: 1000;">
+                <div class="context-menu-item" onclick="showCreateDeptModal()" style="padding: 10px 20px; cursor: pointer; font-size: 13px;">부서 생성</div>
+                <div class="context-menu-item" onclick="showEmployeePanel()" style="padding: 10px 20px; cursor: pointer; font-size: 13px; border-top: 1px solid #eee;">임직원 불러오기</div>
+            </div>
+            
+            <!-- 부서 생성 모달 -->
+            <div id="create-dept-modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1001; justify-content: center; align-items: center;">
+                <div style="background: white; padding: 25px; border-radius: 8px; width: 350px;">
+                    <h3 style="margin: 0 0 20px 0;">부서 생성</h3>
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; margin-bottom: 5px; font-size: 13px;">부서명</label>
+                        <input type="text" id="new-dept-name" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;">
+                    </div>
+                    <div style="margin-bottom: 20px;">
+                        <label style="display: block; margin-bottom: 5px; font-size: 13px;">색상</label>
+                        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                            <div class="color-option" data-color="#1976d2" onclick="selectDeptColor('#1976d2')" style="width: 30px; height: 30px; background: #1976d2; border-radius: 4px; cursor: pointer; border: 2px solid transparent;"></div>
+                            <div class="color-option" data-color="#388e3c" onclick="selectDeptColor('#388e3c')" style="width: 30px; height: 30px; background: #388e3c; border-radius: 4px; cursor: pointer; border: 2px solid transparent;"></div>
+                            <div class="color-option" data-color="#f57c00" onclick="selectDeptColor('#f57c00')" style="width: 30px; height: 30px; background: #f57c00; border-radius: 4px; cursor: pointer; border: 2px solid transparent;"></div>
+                            <div class="color-option" data-color="#d32f2f" onclick="selectDeptColor('#d32f2f')" style="width: 30px; height: 30px; background: #d32f2f; border-radius: 4px; cursor: pointer; border: 2px solid transparent;"></div>
+                            <div class="color-option" data-color="#7b1fa2" onclick="selectDeptColor('#7b1fa2')" style="width: 30px; height: 30px; background: #7b1fa2; border-radius: 4px; cursor: pointer; border: 2px solid transparent;"></div>
+                            <div class="color-option" data-color="#455a64" onclick="selectDeptColor('#455a64')" style="width: 30px; height: 30px; background: #455a64; border-radius: 4px; cursor: pointer; border: 2px solid transparent;"></div>
+                            <div class="color-option" data-color="#00796b" onclick="selectDeptColor('#00796b')" style="width: 30px; height: 30px; background: #00796b; border-radius: 4px; cursor: pointer; border: 2px solid transparent;"></div>
+                            <div class="color-option" data-color="#5d4037" onclick="selectDeptColor('#5d4037')" style="width: 30px; height: 30px; background: #5d4037; border-radius: 4px; cursor: pointer; border: 2px solid transparent;"></div>
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                        <button onclick="closeCreateDeptModal()" style="padding: 8px 20px; border: 1px solid #ddd; background: white; border-radius: 4px; cursor: pointer;">취소</button>
+                        <button onclick="createDeptBox()" style="padding: 8px 20px; border: none; background: #1976d2; color: white; border-radius: 4px; cursor: pointer;">생성</button>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -639,6 +717,7 @@
             document.getElementById('salary-info-tab').style.display = 'none';
             document.getElementById('employee-roster-tab').style.display = 'none';
             document.getElementById('employee-record-tab').style.display = 'none';
+            document.getElementById('org-chart-tab').style.display = 'none';
             document.getElementById('company-tab').style.display = 'none';
             document.getElementById('admin-tab').style.display = 'none';
             
@@ -656,6 +735,10 @@
                 document.getElementById('employee-roster-tab').style.display = 'flex';
                 document.getElementById('tab-employee-data').classList.add('active');
                 loadRoster();
+            } else if (tabName === 'org-chart') {
+                document.getElementById('org-chart-tab').style.display = 'flex';
+                document.getElementById('tab-employee-data').classList.add('active');
+                loadOrgChart();
             } else if (tabName === 'employee-record') {
                 document.getElementById('employee-record-tab').style.display = 'flex';
                 document.getElementById('tab-employee-data').classList.add('active');
@@ -3115,6 +3198,345 @@
             await window.deleteDoc(window.doc(window.db, 'users', userId));
             alert('삭제되었습니다.');
             loadAdminManagement();
+        }
+
+        // ===== 조직도 기능 =====
+        let orgChartData = { departments: [], employees: [] };
+        let contextMenuPosition = { x: 0, y: 0 };
+        let selectedDeptColor = '#1976d2';
+        let allOrgEmployees = [];
+        let draggedEmployee = null;
+
+        // 조직도 로드
+        async function loadOrgChart() {
+            // 오늘 날짜 표시
+            const today = new Date();
+            const dateStr = `${today.getFullYear()}.${String(today.getMonth() + 1).padStart(2, '0')}.${String(today.getDate()).padStart(2, '0')}`;
+            document.getElementById('org-chart-date').textContent = dateStr;
+            document.getElementById('org-chart-date2').textContent = dateStr;
+            
+            // 직원 데이터 로드
+            const employeesSnap = await window.getDocs(window.collection(window.db, 'employees'));
+            allOrgEmployees = [];
+            let totalCount = 0;
+            let specialCounts = { '고문': 0, '자문': 0, '휴직': 0 };
+            
+            employeesSnap.forEach(doc => {
+                const emp = doc.data();
+                emp.id = doc.id;
+                allOrgEmployees.push(emp);
+                totalCount++;
+                
+                if (emp.position === '고문') specialCounts['고문']++;
+                if (emp.position === '자문') specialCounts['자문']++;
+                if (emp.workStatus === '휴직') specialCounts['휴직']++;
+            });
+            
+            // 총인원 및 특이사항 표시
+            document.getElementById('org-chart-total').textContent = totalCount;
+            
+            const specialItems = [];
+            if (specialCounts['고문'] > 0) specialItems.push(`고문(${specialCounts['고문']}명)`);
+            if (specialCounts['자문'] > 0) specialItems.push(`자문(${specialCounts['자문']}명)`);
+            if (specialCounts['휴직'] > 0) specialItems.push(`휴직(${specialCounts['휴직']}명)`);
+            document.getElementById('org-chart-special').textContent = specialItems.length > 0 ? specialItems.join(', ') : '-';
+            
+            // 저장된 조직도 데이터 로드
+            try {
+                const orgDoc = await window.getDoc(window.doc(window.db, 'settings', 'orgChart'));
+                if (orgDoc.exists()) {
+                    orgChartData = orgDoc.data();
+                    renderOrgChart();
+                }
+            } catch (e) {
+                console.log('조직도 데이터 없음');
+            }
+        }
+
+        // 조직도 렌더링
+        function renderOrgChart() {
+            const canvas = document.getElementById('org-chart-canvas');
+            canvas.innerHTML = '';
+            
+            // 부서 박스 렌더링
+            if (orgChartData.departments) {
+                orgChartData.departments.forEach((dept, index) => {
+                    createDeptElement(dept, index);
+                });
+            }
+        }
+
+        // 부서 요소 생성
+        function createDeptElement(dept, index) {
+            const canvas = document.getElementById('org-chart-canvas');
+            
+            const deptEl = document.createElement('div');
+            deptEl.className = 'org-dept-box';
+            deptEl.dataset.index = index;
+            deptEl.style.cssText = `
+                position: absolute;
+                left: ${dept.x}px;
+                top: ${dept.y}px;
+                min-width: 120px;
+                background: white;
+                border: 2px solid ${dept.color};
+                border-radius: 4px;
+                cursor: move;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            `;
+            
+            deptEl.innerHTML = `
+                <div style="background: ${dept.color}; color: white; padding: 8px 12px; font-weight: bold; font-size: 12px; display: flex; justify-content: space-between; align-items: center;">
+                    <span>${dept.name}</span>
+                    <span style="background: white; color: ${dept.color}; padding: 2px 8px; border-radius: 10px; font-size: 11px;">${dept.members ? dept.members.length : 0}</span>
+                </div>
+                <div class="dept-members" style="padding: 8px; min-height: 30px;" data-dept-index="${index}">
+                    ${dept.members ? dept.members.map((m, mi) => `
+                        <div class="dept-member" style="display: flex; justify-content: space-between; padding: 4px 0; font-size: 11px; border-bottom: 1px solid #eee;">
+                            <span style="color: #666;">${m.jobTitle || '-'}</span>
+                            <span style="font-weight: 500;">${m.name}</span>
+                            <button onclick="removeMemberFromDept(${index}, ${mi})" style="background: none; border: none; color: #999; cursor: pointer; font-size: 10px;">✕</button>
+                        </div>
+                    `).join('') : ''}
+                </div>
+                <button onclick="deleteDept(${index})" style="position: absolute; top: -8px; right: -8px; width: 20px; height: 20px; border-radius: 50%; border: none; background: #ff5252; color: white; cursor: pointer; font-size: 12px; display: none;">✕</button>
+            `;
+            
+            // 마우스 오버 시 삭제 버튼 표시
+            deptEl.onmouseenter = () => deptEl.querySelector('button:last-child').style.display = 'block';
+            deptEl.onmouseleave = () => deptEl.querySelector('button:last-child').style.display = 'none';
+            
+            // 드래그 이동
+            makeDraggable(deptEl, index);
+            
+            // 드롭 영역 설정
+            const membersArea = deptEl.querySelector('.dept-members');
+            membersArea.ondragover = (e) => {
+                e.preventDefault();
+                membersArea.style.background = '#e3f2fd';
+            };
+            membersArea.ondragleave = () => {
+                membersArea.style.background = '';
+            };
+            membersArea.ondrop = (e) => {
+                e.preventDefault();
+                membersArea.style.background = '';
+                if (draggedEmployee) {
+                    addMemberToDept(index, draggedEmployee);
+                }
+            };
+            
+            canvas.appendChild(deptEl);
+        }
+
+        // 드래그 가능하게 만들기
+        function makeDraggable(element, deptIndex) {
+            let isDragging = false;
+            let startX, startY, initialX, initialY;
+            
+            element.onmousedown = (e) => {
+                if (e.target.tagName === 'BUTTON' || e.target.closest('.dept-members')) return;
+                
+                isDragging = true;
+                startX = e.clientX;
+                startY = e.clientY;
+                initialX = element.offsetLeft;
+                initialY = element.offsetTop;
+                element.style.zIndex = 1000;
+            };
+            
+            document.addEventListener('mousemove', (e) => {
+                if (!isDragging) return;
+                
+                const dx = e.clientX - startX;
+                const dy = e.clientY - startY;
+                
+                element.style.left = (initialX + dx) + 'px';
+                element.style.top = (initialY + dy) + 'px';
+            });
+            
+            document.addEventListener('mouseup', () => {
+                if (isDragging) {
+                    isDragging = false;
+                    element.style.zIndex = '';
+                    
+                    // 위치 저장
+                    orgChartData.departments[deptIndex].x = element.offsetLeft;
+                    orgChartData.departments[deptIndex].y = element.offsetTop;
+                    saveOrgChart();
+                }
+            });
+        }
+
+        // 컨텍스트 메뉴 표시
+        window.showOrgChartContextMenu = function(e) {
+            e.preventDefault();
+            const menu = document.getElementById('org-context-menu');
+            
+            // 캔버스 영역 내 좌표 계산
+            const canvas = document.getElementById('org-chart-canvas');
+            const rect = canvas.getBoundingClientRect();
+            contextMenuPosition = {
+                x: e.clientX - rect.left + canvas.scrollLeft,
+                y: e.clientY - rect.top + canvas.scrollTop
+            };
+            
+            menu.style.display = 'block';
+            menu.style.left = e.clientX + 'px';
+            menu.style.top = e.clientY + 'px';
+        }
+
+        // 컨텍스트 메뉴 숨기기
+        document.addEventListener('click', () => {
+            document.getElementById('org-context-menu').style.display = 'none';
+        });
+
+        // 부서 생성 모달 표시
+        window.showCreateDeptModal = function() {
+            document.getElementById('org-context-menu').style.display = 'none';
+            document.getElementById('create-dept-modal').style.display = 'flex';
+            document.getElementById('new-dept-name').value = '';
+            selectDeptColor('#1976d2');
+        }
+
+        // 부서 생성 모달 닫기
+        window.closeCreateDeptModal = function() {
+            document.getElementById('create-dept-modal').style.display = 'none';
+        }
+
+        // 색상 선택
+        window.selectDeptColor = function(color) {
+            selectedDeptColor = color;
+            document.querySelectorAll('.color-option').forEach(el => {
+                el.style.border = el.dataset.color === color ? '2px solid #333' : '2px solid transparent';
+            });
+        }
+
+        // 부서 박스 생성
+        window.createDeptBox = function() {
+            const name = document.getElementById('new-dept-name').value.trim();
+            if (!name) {
+                alert('부서명을 입력해주세요.');
+                return;
+            }
+            
+            const newDept = {
+                name: name,
+                color: selectedDeptColor,
+                x: contextMenuPosition.x,
+                y: contextMenuPosition.y,
+                members: []
+            };
+            
+            if (!orgChartData.departments) {
+                orgChartData.departments = [];
+            }
+            orgChartData.departments.push(newDept);
+            
+            saveOrgChart();
+            renderOrgChart();
+            closeCreateDeptModal();
+        }
+
+        // 부서 삭제
+        window.deleteDept = function(index) {
+            if (!confirm('이 부서를 삭제하시겠습니까?')) return;
+            
+            orgChartData.departments.splice(index, 1);
+            saveOrgChart();
+            renderOrgChart();
+        }
+
+        // 임직원 패널 표시
+        window.showEmployeePanel = function() {
+            document.getElementById('org-context-menu').style.display = 'none';
+            document.getElementById('org-chart-employee-panel').style.display = 'flex';
+            renderOrgEmployeeList();
+        }
+
+        // 임직원 패널 숨기기
+        window.hideEmployeePanel = function() {
+            document.getElementById('org-chart-employee-panel').style.display = 'none';
+        }
+
+        // 임직원 목록 렌더링
+        function renderOrgEmployeeList() {
+            const search = document.getElementById('org-employee-search').value.toLowerCase();
+            const list = document.getElementById('org-employee-list');
+            
+            // 이미 배치된 직원 ID 목록
+            const assignedIds = new Set();
+            if (orgChartData.departments) {
+                orgChartData.departments.forEach(dept => {
+                    if (dept.members) {
+                        dept.members.forEach(m => assignedIds.add(m.id));
+                    }
+                });
+            }
+            
+            // 배치되지 않은 직원만 표시
+            const filtered = allOrgEmployees.filter(emp => {
+                const matchSearch = !search || (emp.name && emp.name.toLowerCase().includes(search));
+                const notAssigned = !assignedIds.has(emp.id);
+                return matchSearch && notAssigned;
+            });
+            
+            list.innerHTML = filtered.map(emp => `
+                <div class="org-employee-item" draggable="true" 
+                     ondragstart="startDragEmployee('${emp.id}', '${emp.name}', '${emp.jobTitle || ''}')"
+                     style="padding: 10px; background: white; margin-bottom: 5px; border-radius: 4px; cursor: grab; border: 1px solid #ddd;">
+                    <div style="font-weight: 500; font-size: 13px;">${emp.name}</div>
+                    <div style="font-size: 11px; color: #666;">${emp.jobTitle || '-'} / ${emp.position || '-'}</div>
+                </div>
+            `).join('');
+            
+            if (filtered.length === 0) {
+                list.innerHTML = '<div style="padding: 20px; text-align: center; color: #999;">배치 가능한 직원이 없습니다</div>';
+            }
+        }
+
+        // 임직원 검색 필터
+        window.filterOrgEmployees = function() {
+            renderOrgEmployeeList();
+        }
+
+        // 드래그 시작
+        window.startDragEmployee = function(id, name, jobTitle) {
+            draggedEmployee = { id, name, jobTitle };
+        }
+
+        // 부서에 멤버 추가
+        function addMemberToDept(deptIndex, employee) {
+            if (!orgChartData.departments[deptIndex].members) {
+                orgChartData.departments[deptIndex].members = [];
+            }
+            
+            // 중복 체크
+            const exists = orgChartData.departments[deptIndex].members.some(m => m.id === employee.id);
+            if (exists) return;
+            
+            orgChartData.departments[deptIndex].members.push(employee);
+            saveOrgChart();
+            renderOrgChart();
+            renderOrgEmployeeList();
+            draggedEmployee = null;
+        }
+
+        // 부서에서 멤버 제거
+        window.removeMemberFromDept = function(deptIndex, memberIndex) {
+            orgChartData.departments[deptIndex].members.splice(memberIndex, 1);
+            saveOrgChart();
+            renderOrgChart();
+            renderOrgEmployeeList();
+        }
+
+        // 조직도 저장
+        async function saveOrgChart() {
+            try {
+                await window.setDoc(window.doc(window.db, 'settings', 'orgChart'), orgChartData);
+            } catch (e) {
+                console.error('조직도 저장 실패:', e);
+            }
         }
     </script>
 </body>
