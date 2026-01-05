@@ -3277,24 +3277,64 @@
         }
 
         // ===== 조직도 기능 =====
-        let orgChartData = { departments: [], connections: [] };
+        let orgChartData = { departments: [], connections: [], style: {} };
         let contextMenuPosition = { x: 0, y: 0 };
         let selectedDeptColor = '#1976d2';
         let allOrgEmployees = [];
         let draggedEmployee = null;
         let connectingFrom = null;
         let connectingFromSide = null;
-        let selectedDeptIndex = null; // 우클릭으로 선택된 부서
-        let editingDeptIndex = null; // 수정 중인 부서
-        let currentTeamDeptIndex = null; // 팀 추가 대상 부서
-        let currentTeamIndex = null; // 직원 추가 대상 팀
+        let selectedDeptIndex = null;
+        let editingDeptIndex = null;
         
-        // 레벨별 Y 좌표 (레벨 1~10)
-        const LEVEL_HEIGHT = 120; // 레벨 간 간격
-        const LEVEL_START_Y = 30; // 시작 Y 좌표
+        // 조직도 스타일 설정 (기본값)
+        let orgStyle = {
+            levelHeight: 120,
+            boxWidth: 100,
+            headerFont: 11,
+            memberFont: 10,
+            headerPadding: 6
+        };
         
         function getLevelY(level) {
-            return LEVEL_START_Y + (level - 1) * LEVEL_HEIGHT;
+            return 30 + (level - 1) * orgStyle.levelHeight;
+        }
+
+        // 하위 부서 인원 계산 (연결된 모든 하위 부서 포함)
+        function calculateTotalMembers(deptIndex, visited = new Set()) {
+            if (visited.has(deptIndex)) return 0;
+            visited.add(deptIndex);
+            
+            const dept = orgChartData.departments[deptIndex];
+            if (!dept) return 0;
+            
+            let total = (dept.members || []).length;
+            (dept.teams || []).forEach(team => {
+                total += (team.members || []).length;
+            });
+            
+            (orgChartData.connections || []).forEach(conn => {
+                if (conn.from === deptIndex) {
+                    const toDept = orgChartData.departments[conn.to];
+                    if (toDept && (toDept.level || 1) > (dept.level || 1)) {
+                        total += calculateTotalMembers(conn.to, visited);
+                    }
+                }
+            });
+            
+            return total;
+        }
+
+        // 조직도에 표시된 총 인원 계산
+        function calculateDisplayedTotal() {
+            let total = 0;
+            (orgChartData.departments || []).forEach(dept => {
+                total += (dept.members || []).length;
+                (dept.teams || []).forEach(team => {
+                    total += (team.members || []).length;
+                });
+            });
+            return total;
         }
 
         // 조직도 로드
@@ -3306,20 +3346,17 @@
             
             const employeesSnap = await window.getDocs(window.collection(window.db, 'employees'));
             allOrgEmployees = [];
-            let totalCount = 0;
             let specialCounts = { '고문': 0, '자문': 0, '휴직': 0 };
             
             employeesSnap.forEach(doc => {
                 const emp = doc.data();
                 emp.id = doc.id;
                 allOrgEmployees.push(emp);
-                totalCount++;
                 if (emp.position === '고문') specialCounts['고문']++;
                 if (emp.position === '자문') specialCounts['자문']++;
                 if (emp.workStatus === '휴직') specialCounts['휴직']++;
             });
             
-            document.getElementById('org-chart-total').textContent = totalCount;
             const specialItems = [];
             if (specialCounts['고문'] > 0) specialItems.push(`고문(${specialCounts['고문']}명)`);
             if (specialCounts['자문'] > 0) specialItems.push(`자문(${specialCounts['자문']}명)`);
@@ -3332,6 +3369,9 @@
                     orgChartData = orgDoc.data();
                     if (!orgChartData.connections) orgChartData.connections = [];
                     if (!orgChartData.departments) orgChartData.departments = [];
+                    if (orgChartData.style) {
+                        orgStyle = { ...orgStyle, ...orgChartData.style };
+                    }
                 }
             } catch (e) {
                 console.log('조직도 데이터 없음');
@@ -3352,30 +3392,29 @@
                 });
             }
             renderConnections();
+            
+            document.getElementById('org-chart-total').textContent = calculateDisplayedTotal();
         }
 
         // 부서 요소 생성
         function createDeptElement(dept, index) {
             const canvas = document.getElementById('org-chart-canvas');
             const level = dept.level || 1;
-            const levelY = getLevelY(level);
+            const isTopLevel = level === 1;
             
-            // 부서+팀+멤버 총 높이 계산
-            let totalMembers = (dept.members || []).length;
-            if (dept.teams) {
-                dept.teams.forEach(team => {
-                    totalMembers += (team.members || []).length;
-                });
-            }
+            // Y 위치: 저장된 y값이 있으면 사용, 없으면 레벨 기준
+            const posY = dept.y !== undefined ? dept.y : getLevelY(level);
+            
+            const totalWithChildren = calculateTotalMembers(index);
             
             const deptEl = document.createElement('div');
             deptEl.className = 'org-dept-box';
             deptEl.dataset.index = index;
             deptEl.style.cssText = `
                 position: absolute;
-                left: ${dept.x}px;
-                top: ${levelY}px;
-                min-width: 100px;
+                left: ${dept.x || 100}px;
+                top: ${posY}px;
+                min-width: ${orgStyle.boxWidth}px;
                 background: white;
                 border: 2px solid ${dept.color};
                 border-radius: 4px;
@@ -3384,11 +3423,11 @@
                 z-index: 10;
             `;
             
-            // 부서 헤더
+            // 부서 헤더 (최상위 레벨은 인원수 표시 안함)
             let html = `
-                <div class="dept-header" style="background: ${dept.color}; color: white; padding: 6px 10px; font-weight: bold; font-size: 11px; display: flex; justify-content: space-between; align-items: center;">
+                <div class="dept-header" style="background: ${dept.color}; color: white; padding: ${orgStyle.headerPadding}px 10px; font-weight: bold; font-size: ${orgStyle.headerFont}px; display: flex; justify-content: space-between; align-items: center;">
                     <span>${dept.name}</span>
-                    <span style="background: white; color: ${dept.color}; padding: 1px 6px; border-radius: 10px; font-size: 10px; margin-left: 8px;">${totalMembers}</span>
+                    ${!isTopLevel ? `<span style="background: white; color: ${dept.color}; padding: 1px 6px; border-radius: 10px; font-size: ${orgStyle.headerFont - 1}px; margin-left: 8px;">${totalWithChildren}</span>` : ''}
                 </div>
             `;
             
@@ -3397,37 +3436,37 @@
                 html += `<div class="dept-members" style="padding: 4px 6px; border-bottom: 1px solid #eee;" data-dept-index="${index}" data-team-index="-1">`;
                 dept.members.forEach((m, mi) => {
                     html += `
-                        <div class="dept-member" style="display: flex; justify-content: space-between; align-items: center; padding: 2px 0; font-size: 10px;">
-                            <span style="color: #666; min-width: 35px;">${m.jobTitle || '-'}</span>
+                        <div class="dept-member" style="display: flex; justify-content: space-between; align-items: center; padding: 2px 0; font-size: ${orgStyle.memberFont}px;">
+                            <span style="color: #666; min-width: 30px;">${m.jobTitle || '-'}</span>
                             <span style="font-weight: 500; flex: 1; text-align: right;">${m.name}</span>
-                            <button onclick="removeMemberFromDept(${index}, ${mi}, -1)" style="background: none; border: none; color: #999; cursor: pointer; font-size: 9px; margin-left: 4px;">✕</button>
+                            <button onclick="removeMemberFromDept(${index}, ${mi}, -1)" style="background: none; border: none; color: #999; cursor: pointer; font-size: ${orgStyle.memberFont - 1}px; margin-left: 4px;">✕</button>
                         </div>
                     `;
                 });
                 html += `</div>`;
             } else {
-                html += `<div class="dept-members" style="padding: 4px 6px; min-height: 20px;" data-dept-index="${index}" data-team-index="-1"></div>`;
+                html += `<div class="dept-members" style="padding: 4px 6px; min-height: 15px;" data-dept-index="${index}" data-team-index="-1"></div>`;
             }
             
             // 하위 팀들
             if (dept.teams && dept.teams.length > 0) {
                 dept.teams.forEach((team, ti) => {
                     html += `
-                        <div class="team-box" style="margin: 4px; border: 1px solid #ddd; border-radius: 3px;">
-                            <div style="background: #f5f5f5; padding: 4px 8px; font-size: 10px; font-weight: bold; display: flex; justify-content: space-between; align-items: center;">
+                        <div class="team-box" style="margin: 3px; border: 1px solid #ddd; border-radius: 3px;">
+                            <div style="background: #f5f5f5; padding: 3px 6px; font-size: ${orgStyle.memberFont}px; font-weight: bold; display: flex; justify-content: space-between; align-items: center;">
                                 <span>${team.name}</span>
                                 <span style="color: #666;">${(team.members || []).length}</span>
-                                <button onclick="deleteTeam(${index}, ${ti})" style="background: none; border: none; color: #999; cursor: pointer; font-size: 9px; margin-left: 4px;">✕</button>
+                                <button onclick="deleteTeam(${index}, ${ti})" style="background: none; border: none; color: #999; cursor: pointer; font-size: ${orgStyle.memberFont - 1}px; margin-left: 4px;">✕</button>
                             </div>
-                            <div class="team-members" style="padding: 4px 6px; min-height: 15px;" data-dept-index="${index}" data-team-index="${ti}">
+                            <div class="team-members" style="padding: 3px 5px; min-height: 12px;" data-dept-index="${index}" data-team-index="${ti}">
                     `;
                     if (team.members && team.members.length > 0) {
                         team.members.forEach((m, mi) => {
                             html += `
-                                <div class="dept-member" style="display: flex; justify-content: space-between; align-items: center; padding: 2px 0; font-size: 10px;">
-                                    <span style="color: #666; min-width: 35px;">${m.jobTitle || '-'}</span>
+                                <div class="dept-member" style="display: flex; justify-content: space-between; align-items: center; padding: 1px 0; font-size: ${orgStyle.memberFont}px;">
+                                    <span style="color: #666; min-width: 30px;">${m.jobTitle || '-'}</span>
                                     <span style="font-weight: 500; flex: 1; text-align: right;">${m.name}</span>
-                                    <button onclick="removeMemberFromDept(${index}, ${mi}, ${ti})" style="background: none; border: none; color: #999; cursor: pointer; font-size: 9px; margin-left: 4px;">✕</button>
+                                    <button onclick="removeMemberFromDept(${index}, ${mi}, ${ti})" style="background: none; border: none; color: #999; cursor: pointer; font-size: ${orgStyle.memberFont - 1}px; margin-left: 4px;">✕</button>
                                 </div>
                             `;
                         });
@@ -3490,7 +3529,7 @@
             
             makeDraggable(deptEl, index);
             
-            // 드롭 영역 설정 (부서 직속 + 팀별)
+            // 드롭 영역 설정
             deptEl.querySelectorAll('.dept-members, .team-members').forEach(area => {
                 area.ondragover = (e) => { e.preventDefault(); area.style.background = '#e3f2fd'; };
                 area.ondragleave = () => { area.style.background = ''; };
@@ -3529,15 +3568,13 @@
             
             orgChartData.connections.push({ from: fromIndex, fromSide, to: toIndex, toSide });
             saveOrgChart();
-            renderConnections();
+            renderOrgChart();
         }
 
         // 연결선 렌더링 (꺾인 선 지원)
         function renderConnections() {
             const svg = document.getElementById('org-chart-svg');
             svg.innerHTML = '';
-            
-            // 기존 삭제 버튼 제거
             document.querySelectorAll('.conn-delete-btn').forEach(btn => btn.remove());
             
             if (!orgChartData.connections) return;
@@ -3556,31 +3593,33 @@
                 let pathD;
                 let midX, midY;
                 
-                // 같은 레벨이면 직선, 다른 레벨이면 꺾인 선
+                // 같은 레벨이면 직선
                 if (fromLevel === toLevel) {
-                    // 직선
                     pathD = `M ${fromPos.x} ${fromPos.y} L ${toPos.x} ${toPos.y}`;
                     midX = (fromPos.x + toPos.x) / 2;
                     midY = (fromPos.y + toPos.y) / 2;
                 } else {
-                    // 꺾인 선 (상위에서 하위로)
-                    const verticalMid = (fromPos.y + toPos.y) / 2;
+                    // 다른 레벨
+                    const isVertical = (conn.fromSide === 'bottom' && conn.toSide === 'top') || 
+                                      (conn.fromSide === 'top' && conn.toSide === 'bottom');
                     
-                    if (conn.fromSide === 'bottom' && conn.toSide === 'top') {
-                        // 위에서 아래로
-                        pathD = `M ${fromPos.x} ${fromPos.y} L ${fromPos.x} ${verticalMid} L ${toPos.x} ${verticalMid} L ${toPos.x} ${toPos.y}`;
-                        midX = (fromPos.x + toPos.x) / 2;
-                        midY = verticalMid;
-                    } else if (conn.fromSide === 'top' && conn.toSide === 'bottom') {
-                        // 아래에서 위로
+                    if (isVertical) {
+                        // 위/아래 연결: 두 번 꺾임
+                        const verticalMid = (fromPos.y + toPos.y) / 2;
                         pathD = `M ${fromPos.x} ${fromPos.y} L ${fromPos.x} ${verticalMid} L ${toPos.x} ${verticalMid} L ${toPos.x} ${toPos.y}`;
                         midX = (fromPos.x + toPos.x) / 2;
                         midY = verticalMid;
                     } else {
-                        // 기타 방향
-                        pathD = `M ${fromPos.x} ${fromPos.y} L ${toPos.x} ${toPos.y}`;
-                        midX = (fromPos.x + toPos.x) / 2;
-                        midY = (fromPos.y + toPos.y) / 2;
+                        // 좌/우 연결: 한 번 꺾임
+                        if (conn.fromSide === 'right' || conn.fromSide === 'left') {
+                            pathD = `M ${fromPos.x} ${fromPos.y} L ${toPos.x} ${fromPos.y} L ${toPos.x} ${toPos.y}`;
+                            midX = toPos.x;
+                            midY = (fromPos.y + toPos.y) / 2;
+                        } else {
+                            pathD = `M ${fromPos.x} ${fromPos.y} L ${fromPos.x} ${toPos.y} L ${toPos.x} ${toPos.y}`;
+                            midX = (fromPos.x + toPos.x) / 2;
+                            midY = toPos.y;
+                        }
                     }
                 }
                 
@@ -3661,7 +3700,7 @@
             renderOrgChart();
         }
 
-        // 드래그
+        // 드래그 (X, Y 모두 이동 가능)
         function makeDraggable(element, deptIndex) {
             let isDragging = false;
             let startX, startY, initialX, initialY;
@@ -3679,8 +3718,9 @@
             document.addEventListener('mousemove', (e) => {
                 if (!isDragging) return;
                 const dx = e.clientX - startX;
+                const dy = e.clientY - startY;
                 element.style.left = (initialX + dx) + 'px';
-                // Y는 레벨에 고정
+                element.style.top = (initialY + dy) + 'px';
                 renderConnections();
             });
             
@@ -3689,6 +3729,7 @@
                     isDragging = false;
                     element.style.zIndex = 10;
                     orgChartData.departments[deptIndex].x = element.offsetLeft;
+                    orgChartData.departments[deptIndex].y = element.offsetTop;
                     saveOrgChart();
                 }
             });
@@ -3752,15 +3793,14 @@
             if (!name) { alert('부서명을 입력해주세요.'); return; }
             
             if (editingDeptIndex !== null) {
-                // 수정
                 orgChartData.departments[editingDeptIndex].name = name;
                 orgChartData.departments[editingDeptIndex].level = level;
                 orgChartData.departments[editingDeptIndex].color = selectedDeptColor;
             } else {
-                // 생성
                 const newDept = {
                     name, color: selectedDeptColor, level,
                     x: contextMenuPosition.x,
+                    y: contextMenuPosition.y,
                     members: [], teams: []
                 };
                 if (!orgChartData.departments) orgChartData.departments = [];
@@ -3843,6 +3883,38 @@
             renderOrgChart();
         }
 
+        // 양식 수정 모달
+        window.showOrgStyleModal = function() {
+            document.getElementById('org-style-modal').style.display = 'flex';
+            document.getElementById('style-level-height').value = orgStyle.levelHeight;
+            document.getElementById('style-level-height-val').textContent = orgStyle.levelHeight;
+            document.getElementById('style-box-width').value = orgStyle.boxWidth;
+            document.getElementById('style-box-width-val').textContent = orgStyle.boxWidth;
+            document.getElementById('style-header-font').value = orgStyle.headerFont;
+            document.getElementById('style-header-font-val').textContent = orgStyle.headerFont;
+            document.getElementById('style-member-font').value = orgStyle.memberFont;
+            document.getElementById('style-member-font-val').textContent = orgStyle.memberFont;
+            document.getElementById('style-header-padding').value = orgStyle.headerPadding;
+            document.getElementById('style-header-padding-val').textContent = orgStyle.headerPadding;
+        }
+
+        window.closeOrgStyleModal = function() {
+            document.getElementById('org-style-modal').style.display = 'none';
+        }
+
+        window.applyOrgStyle = function() {
+            orgStyle.levelHeight = parseInt(document.getElementById('style-level-height').value);
+            orgStyle.boxWidth = parseInt(document.getElementById('style-box-width').value);
+            orgStyle.headerFont = parseInt(document.getElementById('style-header-font').value);
+            orgStyle.memberFont = parseInt(document.getElementById('style-member-font').value);
+            orgStyle.headerPadding = parseInt(document.getElementById('style-header-padding').value);
+            
+            orgChartData.style = orgStyle;
+            saveOrgChart();
+            renderOrgChart();
+            closeOrgStyleModal();
+        }
+
         // 임직원 패널
         window.showEmployeePanel = function() {
             document.getElementById('org-context-menu').style.display = 'none';
@@ -3897,12 +3969,10 @@
             const dept = orgChartData.departments[deptIndex];
             
             if (teamIndex === -1) {
-                // 부서 직속
                 if (!dept.members) dept.members = [];
                 if (dept.members.some(m => m.id === employee.id)) return;
                 dept.members.push(employee);
             } else {
-                // 팀 소속
                 if (!dept.teams[teamIndex].members) dept.teams[teamIndex].members = [];
                 if (dept.teams[teamIndex].members.some(m => m.id === employee.id)) return;
                 dept.teams[teamIndex].members.push(employee);
