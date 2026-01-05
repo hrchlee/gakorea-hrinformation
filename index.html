@@ -247,6 +247,7 @@
                         </div>
                         <div style="font-size: 12px; text-align: right;">
                             <div>기준일 : <span id="org-chart-date2"></span></div>
+                            <button onclick="showOrgStyleModal()" style="margin-top: 8px; padding: 6px 12px; background: #1976d2; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 11px;">⚙️ 양식 수정</button>
                         </div>
                     </div>
                     
@@ -340,6 +341,42 @@
                     <div style="display: flex; gap: 10px; justify-content: flex-end;">
                         <button onclick="closeCreateTeamModal()" style="padding: 8px 20px; border: 1px solid #ddd; background: white; border-radius: 4px; cursor: pointer;">취소</button>
                         <button onclick="createTeam()" style="padding: 8px 20px; border: none; background: #1976d2; color: white; border-radius: 4px; cursor: pointer;">생성</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 양식 수정 모달 -->
+            <div id="org-style-modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1001; justify-content: center; align-items: center;">
+                <div style="background: white; padding: 25px; border-radius: 8px; width: 400px;">
+                    <h3 style="margin: 0 0 20px 0;">조직도 양식 수정</h3>
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; margin-bottom: 5px; font-size: 13px;">레벨 간 높이 (px)</label>
+                        <input type="range" id="style-level-height" min="80" max="200" value="120" oninput="document.getElementById('style-level-height-val').textContent = this.value" style="width: 100%;">
+                        <span id="style-level-height-val" style="font-size: 12px; color: #666;">120</span>px
+                    </div>
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; margin-bottom: 5px; font-size: 13px;">부서 박스 최소 너비 (px)</label>
+                        <input type="range" id="style-box-width" min="80" max="180" value="100" oninput="document.getElementById('style-box-width-val').textContent = this.value" style="width: 100%;">
+                        <span id="style-box-width-val" style="font-size: 12px; color: #666;">100</span>px
+                    </div>
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; margin-bottom: 5px; font-size: 13px;">부서명 글자 크기 (px)</label>
+                        <input type="range" id="style-header-font" min="9" max="14" value="11" oninput="document.getElementById('style-header-font-val').textContent = this.value" style="width: 100%;">
+                        <span id="style-header-font-val" style="font-size: 12px; color: #666;">11</span>px
+                    </div>
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; margin-bottom: 5px; font-size: 13px;">직원 글자 크기 (px)</label>
+                        <input type="range" id="style-member-font" min="8" max="12" value="10" oninput="document.getElementById('style-member-font-val').textContent = this.value" style="width: 100%;">
+                        <span id="style-member-font-val" style="font-size: 12px; color: #666;">10</span>px
+                    </div>
+                    <div style="margin-bottom: 20px;">
+                        <label style="display: block; margin-bottom: 5px; font-size: 13px;">헤더 패딩 (px)</label>
+                        <input type="range" id="style-header-padding" min="4" max="12" value="6" oninput="document.getElementById('style-header-padding-val').textContent = this.value" style="width: 100%;">
+                        <span id="style-header-padding-val" style="font-size: 12px; color: #666;">6</span>px
+                    </div>
+                    <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                        <button onclick="closeOrgStyleModal()" style="padding: 8px 20px; border: 1px solid #ddd; background: white; border-radius: 4px; cursor: pointer;">취소</button>
+                        <button onclick="applyOrgStyle()" style="padding: 8px 20px; border: none; background: #1976d2; color: white; border-radius: 4px; cursor: pointer;">적용</button>
                     </div>
                 </div>
             </div>
