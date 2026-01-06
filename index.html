@@ -117,19 +117,23 @@
 
         <div class="tab-menu">
             <button id="tab-dashboard" class="tab-btn active" onclick="switchMainTab('dashboard')">HR 대시보드</button>
+            <button id="tab-recruitment" class="tab-btn">
+                채용 관리
+                <div class="dropdown-menu">
+                    <div class="dropdown-item" onclick="switchMainTab('recruitment-positions')">채용 포지션</div>
+                    <div class="dropdown-item" onclick="switchMainTab('recruitment-interviews')">면접 전형</div>
+                    <div class="dropdown-item" onclick="switchMainTab('recruitment-history')">이력 관리</div>
+                </div>
+            </button>
             <button id="tab-employee" class="tab-btn">
                 직원 관리
                 <div class="dropdown-menu">
                     <div class="dropdown-item" onclick="switchMainTab('employee-info')">임직원 관리</div>
-                    <div class="dropdown-item" onclick="switchMainTab('salary-info')">연봉정보</div>
-                </div>
-            </button>
-            <button id="tab-employee-data" class="tab-btn">
-                임직원 정보
-                <div class="dropdown-menu">
                     <div class="dropdown-item" onclick="switchMainTab('employee-roster')">임직원 명부</div>
-                    <div class="dropdown-item" onclick="switchMainTab('org-chart')">조직도</div>
                     <div class="dropdown-item" onclick="switchMainTab('employee-record')">인사기록카드</div>
+                    <div class="dropdown-item" onclick="switchMainTab('org-chart')">조직도</div>
+                    <div class="dropdown-item" onclick="switchMainTab('salary-info')">연봉정보</div>
+                    <div class="dropdown-item" onclick="switchMainTab('resigned-employees')">퇴사자 명단</div>
                 </div>
             </button>
             <button id="tab-company" class="tab-btn" onclick="switchMainTab('company')">법인 관리</button>
@@ -234,6 +238,54 @@
                         <div id="position-chart" style="max-height: 280px; overflow-y: auto;"></div>
                     </div>
                 </div>
+            </div>
+        </div>
+
+        <!-- 채용 포지션 탭 -->
+        <div id="recruitment-positions-tab" class="layout" style="display: none;">
+            <div class="main-content" style="padding: 30px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h2>채용 포지션</h2>
+                    <button class="btn btn-primary" onclick="window.showAddPositionForm()">+ 포지션 등록</button>
+                </div>
+                
+                <div style="overflow-x: auto;">
+                    <table id="positions-table" style="width: 100%; border-collapse: collapse; background: white; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                        <thead style="background: #f5f5f5;">
+                            <tr>
+                                <th style="padding: 12px; border: 1px solid #ddd;">No</th>
+                                <th style="padding: 12px; border: 1px solid #ddd;">법인</th>
+                                <th style="padding: 12px; border: 1px solid #ddd;">근무지</th>
+                                <th style="padding: 12px; border: 1px solid #ddd;">직무</th>
+                                <th style="padding: 12px; border: 1px solid #ddd;">직위</th>
+                                <th style="padding: 12px; border: 1px solid #ddd;">등록일</th>
+                                <th style="padding: 12px; border: 1px solid #ddd;">상태</th>
+                                <th style="padding: 12px; border: 1px solid #ddd;">관리</th>
+                            </tr>
+                        </thead>
+                        <tbody id="positions-tbody">
+                            <tr>
+                                <td colspan="8" style="padding: 40px; text-align: center; color: #999;">등록된 포지션이 없습니다</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- 면접 전형 탭 -->
+        <div id="recruitment-interviews-tab" class="layout" style="display: none;">
+            <div class="main-content" style="padding: 30px;">
+                <h2>면접 전형</h2>
+                <div class="empty-state"><p>준비 중입니다</p></div>
+            </div>
+        </div>
+
+        <!-- 이력 관리 탭 -->
+        <div id="recruitment-history-tab" class="layout" style="display: none;">
+            <div class="main-content" style="padding: 30px;">
+                <h2>이력 관리</h2>
+                <div class="empty-state"><p>준비 중입니다</p></div>
             </div>
         </div>
 
@@ -555,6 +607,49 @@
             </div>
         </div>
 
+        <!-- 퇴사자 명단 탭 -->
+        <div id="resigned-employees-tab" class="layout" style="display: none;">
+            <div class="main-content" style="padding: 30px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h2>퇴사자 명단</h2>
+                    <button class="btn btn-primary" onclick="exportResignedEmployees()">📊 Excel 내보내기</button>
+                </div>
+                
+                <div style="margin-bottom: 20px; display: flex; gap: 10px; align-items: center;">
+                    <select id="resigned-company-filter" onchange="loadResignedEmployees()" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                        <option value="">전체 법인</option>
+                    </select>
+                    <select id="resigned-year-filter" onchange="loadResignedEmployees()" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                        <option value="">전체 연도</option>
+                    </select>
+                </div>
+
+                <div style="overflow-x: auto;">
+                    <table id="resigned-table" style="width: 100%; border-collapse: collapse; background: white; box-shadow: 0 1px 3px rgba(0,0,0,0.1); font-size: 11px;">
+                        <thead style="background: #f5f5f5;">
+                            <tr>
+                                <th style="padding: 8px; border: 1px solid #ddd; font-size: 11px;">No</th>
+                                <th style="padding: 8px; border: 1px solid #ddd; font-size: 11px;">법인</th>
+                                <th style="padding: 8px; border: 1px solid #ddd; font-size: 11px;">부서</th>
+                                <th style="padding: 8px; border: 1px solid #ddd; font-size: 11px;">성명</th>
+                                <th style="padding: 8px; border: 1px solid #ddd; font-size: 11px;">직급</th>
+                                <th style="padding: 8px; border: 1px solid #ddd; font-size: 11px;">입사일</th>
+                                <th style="padding: 8px; border: 1px solid #ddd; font-size: 11px;">퇴사일</th>
+                                <th style="padding: 8px; border: 1px solid #ddd; font-size: 11px;">근속기간</th>
+                                <th style="padding: 8px; border: 1px solid #ddd; font-size: 11px;">퇴사사유</th>
+                                <th style="padding: 8px; border: 1px solid #ddd; font-size: 11px;">비고</th>
+                            </tr>
+                        </thead>
+                        <tbody id="resigned-tbody">
+                            <tr>
+                                <td colspan="10" style="padding: 40px; text-align: center; color: #999;">데이터가 없습니다</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
         <!-- 법인 관리 탭 -->
         <div id="company-tab" class="layout" style="display: none;">
             <div class="main-content" style="padding: 30px;">
@@ -714,7 +809,7 @@
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
         import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
-        import { getFirestore, collection, getDocs, doc, setDoc, deleteDoc, getDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+        import { getFirestore, collection, getDocs, doc, setDoc, deleteDoc, getDoc, addDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
         const firebaseConfig = {
             apiKey: "AIzaSyCrsPO00nsUH4iwUfHCF1aFKwcuoedqTTs",
@@ -737,6 +832,7 @@
         window.setDoc = setDoc;
         window.deleteDoc = deleteDoc;
         window.getDoc = getDoc;
+        window.addDoc = addDoc;
         window.serverTimestamp = serverTimestamp;
         
         console.log('✅ Firebase 초기화 완료');
@@ -894,11 +990,15 @@
             
             // 모든 탭 숨기기
             document.getElementById('dashboard-tab').style.display = 'none';
+            document.getElementById('recruitment-positions-tab').style.display = 'none';
+            document.getElementById('recruitment-interviews-tab').style.display = 'none';
+            document.getElementById('recruitment-history-tab').style.display = 'none';
             document.getElementById('employee-info-tab').style.display = 'none';
             document.getElementById('salary-info-tab').style.display = 'none';
             document.getElementById('employee-roster-tab').style.display = 'none';
             document.getElementById('employee-record-tab').style.display = 'none';
             document.getElementById('org-chart-tab').style.display = 'none';
+            document.getElementById('resigned-employees-tab').style.display = 'none';
             document.getElementById('company-tab').style.display = 'none';
             document.getElementById('admin-tab').style.display = 'none';
             
@@ -907,26 +1007,40 @@
                 document.getElementById('dashboard-tab').style.display = 'flex';
                 document.getElementById('tab-dashboard').classList.add('active');
                 loadDashboard();
+            } else if (tabName === 'recruitment-positions') {
+                document.getElementById('recruitment-positions-tab').style.display = 'flex';
+                document.getElementById('tab-recruitment').classList.add('active');
+                loadRecruitmentPositions();
+            } else if (tabName === 'recruitment-interviews') {
+                document.getElementById('recruitment-interviews-tab').style.display = 'flex';
+                document.getElementById('tab-recruitment').classList.add('active');
+            } else if (tabName === 'recruitment-history') {
+                document.getElementById('recruitment-history-tab').style.display = 'flex';
+                document.getElementById('tab-recruitment').classList.add('active');
             } else if (tabName === 'employee-info') {
                 document.getElementById('employee-info-tab').style.display = 'flex';
                 document.getElementById('tab-employee').classList.add('active');
-                loadEmployees();  // 직원 목록 로드 추가
-                loadCompanyFilters();  // 법인 필터 로드 추가
+                loadEmployees();
+                loadCompanyFilters();
+            } else if (tabName === 'employee-roster') {
+                document.getElementById('employee-roster-tab').style.display = 'flex';
+                document.getElementById('tab-employee').classList.add('active');
+                window.loadRoster();
+            } else if (tabName === 'employee-record') {
+                document.getElementById('employee-record-tab').style.display = 'flex';
+                document.getElementById('tab-employee').classList.add('active');
+            } else if (tabName === 'org-chart') {
+                document.getElementById('org-chart-tab').style.display = 'flex';
+                document.getElementById('tab-employee').classList.add('active');
+                loadOrgChart();
             } else if (tabName === 'salary-info') {
                 document.getElementById('salary-info-tab').style.display = 'flex';
                 document.getElementById('tab-employee').classList.add('active');
                 loadSalaryInfo();
-            } else if (tabName === 'employee-roster') {
-                document.getElementById('employee-roster-tab').style.display = 'flex';
-                document.getElementById('tab-employee-data').classList.add('active');
-                window.loadRoster();
-            } else if (tabName === 'org-chart') {
-                document.getElementById('org-chart-tab').style.display = 'flex';
-                document.getElementById('tab-employee-data').classList.add('active');
-                loadOrgChart();
-            } else if (tabName === 'employee-record') {
-                document.getElementById('employee-record-tab').style.display = 'flex';
-                document.getElementById('tab-employee-data').classList.add('active');
+            } else if (tabName === 'resigned-employees') {
+                document.getElementById('resigned-employees-tab').style.display = 'flex';
+                document.getElementById('tab-employee').classList.add('active');
+                loadResignedEmployees();
             } else if (tabName === 'company') {
                 document.getElementById('company-tab').style.display = 'flex';
                 document.getElementById('tab-company').classList.add('active');
@@ -1941,6 +2055,314 @@
             event.target.value = '';
         }
 
+        // ===== 채용 포지션 관리 =====
+        async function loadRecruitmentPositions() {
+            showLoading();
+            
+            try {
+                const positionsSnap = await window.getDocs(window.collection(window.db, 'recruitmentPositions'));
+                const positions = [];
+                positionsSnap.forEach(doc => {
+                    positions.push({ id: doc.id, ...doc.data() });
+                });
+                
+                // 법인 데이터 로드
+                const companiesSnap = await window.getDocs(window.collection(window.db, 'companies'));
+                const companies = {};
+                companiesSnap.forEach(doc => {
+                    const c = doc.data();
+                    companies[c.code] = c.name;
+                });
+                
+                const tbody = document.getElementById('positions-tbody');
+                
+                if (positions.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="8" style="padding: 40px; text-align: center; color: #999;">등록된 포지션이 없습니다</td></tr>';
+                    hideLoading();
+                    return;
+                }
+                
+                // 등록일 기준 최신순 정렬
+                positions.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
+                
+                tbody.innerHTML = positions.map((pos, idx) => {
+                    const companyName = companies[pos.companyCode] || pos.companyCode || '-';
+                    const statusBadge = pos.status === 'active' 
+                        ? '<span style="background: #10b981; color: white; padding: 4px 8px; border-radius: 4px; font-size: 11px;">진행중</span>'
+                        : '<span style="background: #6b7280; color: white; padding: 4px 8px; border-radius: 4px; font-size: 11px;">마감</span>';
+                    
+                    return `
+                        <tr>
+                            <td style="padding: 12px; border: 1px solid #ddd; text-align: center;">${idx + 1}</td>
+                            <td style="padding: 12px; border: 1px solid #ddd;">${companyName}</td>
+                            <td style="padding: 12px; border: 1px solid #ddd;">${pos.location || '-'}</td>
+                            <td style="padding: 12px; border: 1px solid #ddd; font-weight: 600;">${pos.jobTitle || '-'}</td>
+                            <td style="padding: 12px; border: 1px solid #ddd;">${pos.position || '-'}</td>
+                            <td style="padding: 12px; border: 1px solid #ddd;">${pos.createdAt || '-'}</td>
+                            <td style="padding: 12px; border: 1px solid #ddd; text-align: center;">${statusBadge}</td>
+                            <td style="padding: 12px; border: 1px solid #ddd; text-align: center;">
+                                <button onclick="window.viewPositionDetail('${pos.id}')" style="padding: 4px 8px; margin-right: 4px; background: #3b82f6; color: white; border: none; border-radius: 4px; cursor: pointer;">상세</button>
+                                <button onclick="window.deletePosition('${pos.id}')" style="padding: 4px 8px; background: #ef4444; color: white; border: none; border-radius: 4px; cursor: pointer;">삭제</button>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+                
+            } catch (error) {
+                console.error('포지션 로드 오류:', error);
+                alert('포지션 로드 오류: ' + error.message);
+            }
+            
+            hideLoading();
+        }
+        
+        window.showAddPositionForm = function() {
+            const html = `
+                <div style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 10000;" onclick="this.remove()">
+                    <div style="background: white; padding: 30px; border-radius: 8px; width: 600px; max-height: 90vh; overflow-y: auto;" onclick="event.stopPropagation()">
+                        <h3 style="margin-bottom: 20px;">채용 포지션 등록</h3>
+                        <form id="position-form" onsubmit="return window.savePosition(event)">
+                            <div style="margin-bottom: 15px;">
+                                <label style="display: block; margin-bottom: 5px; font-weight: 600;">법인 *</label>
+                                <select name="companyCode" required style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;" id="position-company-select">
+                                    <option value="">선택하세요</option>
+                                </select>
+                            </div>
+                            
+                            <div style="margin-bottom: 15px;">
+                                <label style="display: block; margin-bottom: 5px; font-weight: 600;">근무지 *</label>
+                                <select name="location" required style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;" id="position-location-select">
+                                    <option value="">선택하세요</option>
+                                </select>
+                            </div>
+                            
+                            <div style="margin-bottom: 15px;">
+                                <label style="display: block; margin-bottom: 5px; font-weight: 600;">직무 *</label>
+                                <input type="text" name="jobTitle" required style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;" placeholder="예: 백엔드 개발자">
+                            </div>
+                            
+                            <div style="margin-bottom: 15px;">
+                                <label style="display: block; margin-bottom: 5px; font-weight: 600;">직위 *</label>
+                                <select name="position" required style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;" id="position-select">
+                                    <option value="">선택하세요</option>
+                                </select>
+                            </div>
+                            
+                            <div style="margin-bottom: 15px;">
+                                <label style="display: block; margin-bottom: 5px; font-weight: 600;">JD (직무기술서)</label>
+                                <textarea name="jd" rows="8" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;" placeholder="직무 내용, 자격 요건, 우대 사항 등을 입력하세요"></textarea>
+                            </div>
+                            
+                            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                                <button type="button" onclick="this.closest('div[style*=fixed]').remove()" style="padding: 8px 16px; background: #6b7280; color: white; border: none; border-radius: 4px; cursor: pointer;">취소</button>
+                                <button type="submit" style="padding: 8px 16px; background: #3b82f6; color: white; border: none; border-radius: 4px; cursor: pointer;">등록</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            `;
+            
+            document.body.insertAdjacentHTML('beforeend', html);
+            
+            // 드롭다운 데이터 로드
+            window.loadCompaniesForPosition();
+            window.loadLocationsForPosition();
+            window.loadPositionsForSelect();
+        }
+        
+        window.loadCompaniesForPosition = async function() {
+            const select = document.getElementById('position-company-select');
+            
+            // 미정 옵션 추가
+            const undefinedOption = document.createElement('option');
+            undefinedOption.value = '미정';
+            undefinedOption.textContent = '미정';
+            select.appendChild(undefinedOption);
+            
+            const companiesSnap = await window.getDocs(window.collection(window.db, 'companies'));
+            companiesSnap.forEach(doc => {
+                const c = doc.data();
+                const option = document.createElement('option');
+                option.value = c.code;
+                option.textContent = c.name;
+                select.appendChild(option);
+            });
+        }
+        
+        window.loadLocationsForPosition = async function() {
+            const select = document.getElementById('position-location-select');
+            
+            // 미정 옵션 추가
+            const undefinedOption = document.createElement('option');
+            undefinedOption.value = '미정';
+            undefinedOption.textContent = '미정';
+            select.appendChild(undefinedOption);
+            
+            // settings/master 문서에서 locations 로드
+            const settingsDoc = await window.getDoc(window.doc(window.db, 'settings', 'master'));
+            if (settingsDoc.exists()) {
+                const settings = settingsDoc.data();
+                const locations = settings.locations || [];
+                
+                locations.forEach(loc => {
+                    const option = document.createElement('option');
+                    option.value = loc;
+                    option.textContent = loc;
+                    select.appendChild(option);
+                });
+            }
+        }
+        
+        window.loadPositionsForSelect = async function() {
+            const select = document.getElementById('position-select');
+            
+            // settings/master 문서에서 jobTitles(직위) 로드
+            const settingsDoc = await window.getDoc(window.doc(window.db, 'settings', 'master'));
+            if (settingsDoc.exists()) {
+                const settings = settingsDoc.data();
+                const jobTitles = settings.jobTitles || [];
+                
+                jobTitles.forEach(title => {
+                    const option = document.createElement('option');
+                    option.value = title;
+                    option.textContent = title;
+                    select.appendChild(option);
+                });
+            }
+        }
+        
+        window.savePosition = async function(event) {
+            event.preventDefault();
+            
+            const form = event.target;
+            const data = {
+                companyCode: form.companyCode.value,
+                location: form.location.value,
+                jobTitle: form.jobTitle.value,
+                position: form.position.value,
+                jd: form.jd.value || '',
+                status: 'active',
+                createdAt: new Date().toISOString().split('T')[0],
+                createdBy: window.currentUser?.email || 'admin'
+            };
+            
+            try {
+                await window.addDoc(window.collection(window.db, 'recruitmentPositions'), data);
+                alert('✅ 포지션이 등록되었습니다.');
+                document.querySelector('div[style*="position: fixed"]').remove();
+                loadRecruitmentPositions();
+                
+                // 대시보드가 열려있으면 리로드
+                if (document.getElementById('dashboard-tab').style.display !== 'none') {
+                    loadDashboard();
+                }
+            } catch (error) {
+                console.error('포지션 등록 오류:', error);
+                alert('❌ 포지션 등록 오류: ' + error.message);
+            }
+            
+            return false;
+        }
+        
+        window.deletePosition = async function(positionId) {
+            if (!confirm('이 포지션을 삭제하시겠습니까?')) return;
+            
+            try {
+                await window.deleteDoc(window.doc(window.db, 'recruitmentPositions', positionId));
+                alert('✅ 포지션이 삭제되었습니다.');
+                loadRecruitmentPositions();
+                
+                // 대시보드가 열려있으면 리로드
+                if (document.getElementById('dashboard-tab').style.display !== 'none') {
+                    loadDashboard();
+                }
+            } catch (error) {
+                console.error('포지션 삭제 오류:', error);
+                alert('❌ 포지션 삭제 오류: ' + error.message);
+            }
+        }
+        
+        window.viewPositionDetail = async function(positionId) {
+            showLoading();
+            
+            try {
+                const posDoc = await window.getDoc(window.doc(window.db, 'recruitmentPositions', positionId));
+                if (!posDoc.exists()) {
+                    alert('포지션을 찾을 수 없습니다.');
+                    return;
+                }
+                
+                const pos = posDoc.data();
+                
+                // 법인명 조회
+                let companyName = pos.companyCode;
+                if (pos.companyCode) {
+                    const companyDoc = await window.getDoc(window.doc(window.db, 'companies', pos.companyCode));
+                    if (companyDoc.exists()) {
+                        companyName = companyDoc.data().name;
+                    }
+                }
+                
+                const html = `
+                    <div style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 10000;" onclick="this.remove()">
+                        <div style="background: white; padding: 30px; border-radius: 8px; width: 700px; max-height: 90vh; overflow-y: auto;" onclick="event.stopPropagation()">
+                            <h3 style="margin-bottom: 20px;">포지션 상세 정보</h3>
+                            
+                            <div style="margin-bottom: 20px;">
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                                    <div>
+                                        <div style="font-size: 12px; color: #6b7280; margin-bottom: 4px;">법인</div>
+                                        <div style="font-size: 14px; font-weight: 600;">${companyName}</div>
+                                    </div>
+                                    <div>
+                                        <div style="font-size: 12px; color: #6b7280; margin-bottom: 4px;">근무지</div>
+                                        <div style="font-size: 14px; font-weight: 600;">${pos.location || '-'}</div>
+                                    </div>
+                                    <div>
+                                        <div style="font-size: 12px; color: #6b7280; margin-bottom: 4px;">직무</div>
+                                        <div style="font-size: 14px; font-weight: 600;">${pos.jobTitle || '-'}</div>
+                                    </div>
+                                    <div>
+                                        <div style="font-size: 12px; color: #6b7280; margin-bottom: 4px;">직위</div>
+                                        <div style="font-size: 14px; font-weight: 600;">${pos.position || '-'}</div>
+                                    </div>
+                                    <div>
+                                        <div style="font-size: 12px; color: #6b7280; margin-bottom: 4px;">등록일</div>
+                                        <div style="font-size: 14px;">${pos.createdAt || '-'}</div>
+                                    </div>
+                                    <div>
+                                        <div style="font-size: 12px; color: #6b7280; margin-bottom: 4px;">상태</div>
+                                        <div style="font-size: 14px;">
+                                            ${pos.status === 'active' ? '<span style="color: #10b981; font-weight: 600;">진행중</span>' : '<span style="color: #6b7280;">마감</span>'}
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div style="margin-top: 20px;">
+                                    <div style="font-size: 12px; color: #6b7280; margin-bottom: 8px;">직무기술서 (JD)</div>
+                                    <div style="background: #f9fafb; padding: 15px; border-radius: 4px; white-space: pre-wrap; font-size: 13px; line-height: 1.6;">
+                                        ${pos.jd || '작성된 JD가 없습니다.'}
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div style="display: flex; justify-content: flex-end;">
+                                <button onclick="this.closest('div[style*=fixed]').remove()" style="padding: 8px 16px; background: #6b7280; color: white; border: none; border-radius: 4px; cursor: pointer;">닫기</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                document.body.insertAdjacentHTML('beforeend', html);
+                
+            } catch (error) {
+                console.error('포지션 상세 조회 오류:', error);
+                alert('포지션 상세 조회 오류: ' + error.message);
+            }
+            
+            hideLoading();
+        }
+
         // ===== HR 대시보드 =====
         async function loadDashboard() {
             showLoading();
@@ -1985,8 +2407,16 @@
                 const resignations = employees.filter(emp => emp.resignDate && emp.resignDate.startsWith(currentMonth)).length;
                 document.getElementById('resignations').textContent = resignations;
                 
-                // 4. 채용 진행 포지션 (임시 데이터)
-                document.getElementById('open-positions').textContent = '0';
+                // 4. 채용 진행 포지션 (실제 데이터)
+                const positionsSnap = await window.getDocs(window.collection(window.db, 'recruitmentPositions'));
+                const activePositions = [];
+                positionsSnap.forEach(doc => {
+                    const pos = doc.data();
+                    if (pos.status === 'active') {
+                        activePositions.push({ id: doc.id, ...pos });
+                    }
+                });
+                document.getElementById('open-positions').textContent = activePositions.length;
                 
                 // 5. 인사팀 KPI 달성률 (임시 데이터)
                 document.getElementById('hr-kpi').textContent = '0%';
@@ -1994,12 +2424,40 @@
                 // ===== 중단 영역 =====
                 
                 // 채용 진행 현황
-                document.getElementById('recruitment-status').innerHTML = `
-                    <div style="color: #6b7280; text-align: center; padding: 40px 20px;">
-                        <div style="font-size: 32px; margin-bottom: 10px;">📝</div>
-                        <div style="font-size: 13px;">채용 진행 중인 포지션이 없습니다</div>
-                    </div>
-                `;
+                let recruitmentHTML = '';
+                if (activePositions.length === 0) {
+                    recruitmentHTML = `
+                        <div style="color: #6b7280; text-align: center; padding: 40px 20px;">
+                            <div style="font-size: 32px; margin-bottom: 10px;">📝</div>
+                            <div style="font-size: 13px;">채용 진행 중인 포지션이 없습니다</div>
+                        </div>
+                    `;
+                } else {
+                    recruitmentHTML = '<div style="display: flex; flex-direction: column; gap: 10px;">';
+                    activePositions.slice(0, 5).forEach(pos => {
+                        const companyName = companies[pos.companyCode] || pos.companyCode || '-';
+                        recruitmentHTML += `
+                            <div style="padding: 10px; background: #f9fafb; border-radius: 6px; border-left: 3px solid #3b82f6;">
+                                <div style="font-size: 13px; font-weight: 600; margin-bottom: 4px; color: #1f2937;">${pos.jobTitle || '직무명 없음'}</div>
+                                <div style="font-size: 11px; color: #6b7280;">
+                                    ${companyName} | ${pos.location || '-'} | ${pos.position || '-'}
+                                </div>
+                                <div style="font-size: 11px; color: #999; margin-top: 4px;">등록일: ${pos.createdAt || '-'}</div>
+                            </div>
+                        `;
+                    });
+                    if (activePositions.length > 5) {
+                        recruitmentHTML += `
+                            <div style="text-align: center; padding: 8px;">
+                                <a href="#" onclick="switchMainTab('recruitment-positions'); return false;" style="font-size: 11px; color: #3b82f6; text-decoration: none;">
+                                    +${activePositions.length - 5}개 더 보기
+                                </a>
+                            </div>
+                        `;
+                    }
+                    recruitmentHTML += '</div>';
+                }
+                document.getElementById('recruitment-status').innerHTML = recruitmentHTML;
                 
                 // 조직 건강도 & 리스크
                 const avgTenure = calculateAvgTenure(employees, currentDate);
@@ -2145,10 +2603,126 @@
                 .filter(([_, count]) => count >= 2)
                 .map(([dept, _]) => dept);
         }
-                alert('대시보드 로드 오류: ' + error.message);
+
+        // ===== 퇴사자 명단 =====
+        async function loadResignedEmployees() {
+            showLoading();
+            
+            const companyFilter = document.getElementById('resigned-company-filter').value;
+            const yearFilter = document.getElementById('resigned-year-filter').value;
+            
+            // 법인 데이터 로드
+            const companiesSnap = await window.getDocs(window.collection(window.db, 'companies'));
+            const companies = {};
+            companiesSnap.forEach(doc => {
+                const c = doc.data();
+                companies[c.code] = c.name;
+            });
+            
+            // 부서 데이터 로드
+            const deptsSnap = await window.getDocs(window.collection(window.db, 'departments'));
+            const depts = {};
+            deptsSnap.forEach(doc => {
+                const d = doc.data();
+                depts[d.code] = d.name;
+            });
+            
+            // 직원 데이터 로드
+            const employeesSnap = await window.getDocs(window.collection(window.db, 'employees'));
+            let employees = [];
+            const years = new Set();
+            
+            employeesSnap.forEach(doc => {
+                const emp = doc.data();
+                emp.id = doc.id;
+                // 퇴사일이 있는 직원만
+                if (emp.resignDate) {
+                    employees.push(emp);
+                    const year = emp.resignDate.substring(0, 4);
+                    years.add(year);
+                }
+            });
+            
+            // 법인 필터 업데이트
+            const companySelect = document.getElementById('resigned-company-filter');
+            companySelect.innerHTML = '<option value="">전체 법인</option>';
+            Object.entries(companies).forEach(([code, name]) => {
+                const option = document.createElement('option');
+                option.value = code;
+                option.textContent = name;
+                if (code === companyFilter) option.selected = true;
+                companySelect.appendChild(option);
+            });
+            
+            // 연도 필터 업데이트
+            const yearSelect = document.getElementById('resigned-year-filter');
+            yearSelect.innerHTML = '<option value="">전체 연도</option>';
+            Array.from(years).sort().reverse().forEach(year => {
+                const option = document.createElement('option');
+                option.value = year;
+                option.textContent = year + '년';
+                if (year === yearFilter) option.selected = true;
+                yearSelect.appendChild(option);
+            });
+            
+            // 필터링
+            if (companyFilter) {
+                employees = employees.filter(e => e.companyCode === companyFilter);
+            }
+            if (yearFilter) {
+                employees = employees.filter(e => e.resignDate && e.resignDate.startsWith(yearFilter));
             }
             
+            // 퇴사일 기준 최신순 정렬
+            employees.sort((a, b) => (b.resignDate || '').localeCompare(a.resignDate || ''));
+            
+            // 테이블 렌더링
+            const tbody = document.getElementById('resigned-tbody');
+            
+            if (employees.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="10" style="padding: 40px; text-align: center; color: #999;">퇴사자가 없습니다</td></tr>';
+                hideLoading();
+                return;
+            }
+            
+            tbody.innerHTML = employees.map((emp, idx) => {
+                const companyName = companies[emp.companyCode] || emp.companyCode || '-';
+                const deptName = depts[emp.departmentCode] || emp.departmentCode || '-';
+                
+                // 근속기간 계산
+                let tenure = '-';
+                if (emp.hireDate && emp.resignDate) {
+                    const hire = new Date(emp.hireDate);
+                    const resign = new Date(emp.resignDate);
+                    const years = Math.floor((resign - hire) / (1000 * 60 * 60 * 24 * 365));
+                    const months = Math.floor(((resign - hire) % (1000 * 60 * 60 * 24 * 365)) / (1000 * 60 * 60 * 24 * 30));
+                    tenure = `${years}년 ${months}개월`;
+                }
+                
+                return `
+                    <tr>
+                        <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">${idx + 1}</td>
+                        <td style="padding: 8px; border: 1px solid #ddd;">${companyName}</td>
+                        <td style="padding: 8px; border: 1px solid #ddd;">${deptName}</td>
+                        <td style="padding: 8px; border: 1px solid #ddd;">${emp.name || '-'}</td>
+                        <td style="padding: 8px; border: 1px solid #ddd;">${emp.position || '-'}</td>
+                        <td style="padding: 8px; border: 1px solid #ddd;">${emp.hireDate || '-'}</td>
+                        <td style="padding: 8px; border: 1px solid #ddd; color: #dc2626; font-weight: 600;">${emp.resignDate || '-'}</td>
+                        <td style="padding: 8px; border: 1px solid #ddd;">${tenure}</td>
+                        <td style="padding: 8px; border: 1px solid #ddd;">${emp.resignReason || '-'}</td>
+                        <td style="padding: 8px; border: 1px solid #ddd;">${emp.resignNote || '-'}</td>
+                    </tr>
+                `;
+            }).join('');
+            
             hideLoading();
+        }
+        
+        function exportResignedEmployees() {
+            const table = document.getElementById('resigned-table');
+            const wb = window.XLSX.utils.table_to_book(table, {sheet: "퇴사자명단"});
+            const today = new Date().toISOString().split('T')[0];
+            window.XLSX.writeFile(wb, `퇴사자명단_${today}.xlsx`);
         }
 
         // ===== 임직원 명부 =====
