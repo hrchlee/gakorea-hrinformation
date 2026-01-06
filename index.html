@@ -4,14 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GA KOREA 인사관리시스템</title>
-    <!-- 버전: v2.0.3 - 2026-01-03 -->
+    <!-- 
+        버전: v2.1.0 - 2026-01-04
+        변경사항:
+        - HTTPS 강제 리다이렉트 제거 (GitHub Pages 호환)
+        - 재직정보 법인/부서명 실제 조회 표시
+        - 사번 자동생성 제거, 필수 입력으로 변경
+        - 검색 버튼 추가 및 필터링 기능 개선
+        - 임원/자문/고문 VIP 우선 정렬
+    -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <script>
-    // HTTPS 강제 리다이렉트
-    if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
-        location.replace('https:' + window.location.href.substring(window.location.protocol.length));
-    }
-    </script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Malgun Gothic', sans-serif; background: #f5f6f8; font-size: 12px; }
@@ -114,7 +116,8 @@
         </div>
 
         <div class="tab-menu">
-            <button id="tab-employee" class="tab-btn active">
+            <button id="tab-dashboard" class="tab-btn active" onclick="switchMainTab('dashboard')">HR 대시보드</button>
+            <button id="tab-employee" class="tab-btn">
                 직원 관리
                 <div class="dropdown-menu">
                     <div class="dropdown-item" onclick="switchMainTab('employee-info')">임직원 관리</div>
@@ -133,7 +136,108 @@
             <button id="tab-admin" class="tab-btn" onclick="switchMainTab('admin')">시스템 관리자</button>
         </div>
 
-        <div id="employee-info-tab" class="layout">
+        <!-- HR 대시보드 탭 -->
+        <div id="dashboard-tab" class="layout" style="display: none;">
+            <div class="main-content" style="padding: 40px 60px; max-width: 1600px; margin: 0 auto;">
+                <h2 style="margin-bottom: 30px; color: #333; font-size: 20px; font-weight: 600;">📊 HR 대시보드</h2>
+                
+                <!-- 상단 요약 카드 (4개) -->
+                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 30px;">
+                    <!-- 전체 직원 -->
+                    <div style="background: white; border: 1px solid #e5e7eb; padding: 20px; border-radius: 8px;">
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <div style="width: 40px; height: 40px; background: #eff6ff; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                                <span style="font-size: 20px;">👥</span>
+                            </div>
+                            <div style="flex: 1;">
+                                <div style="font-size: 11px; color: #6b7280; margin-bottom: 4px;">전체 직원</div>
+                                <div style="font-size: 24px; font-weight: 700; color: #1f2937;" id="total-employees">-</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 신규 입퇴사자 -->
+                    <div style="background: white; border: 1px solid #e5e7eb; padding: 20px; border-radius: 8px;">
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <div style="width: 40px; height: 40px; background: #f0fdf4; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                                <span style="font-size: 20px;">📈</span>
+                            </div>
+                            <div style="flex: 1;">
+                                <div style="font-size: 11px; color: #6b7280; margin-bottom: 4px;">이번 달 입퇴사</div>
+                                <div style="display: flex; align-items: baseline; gap: 8px;">
+                                    <span style="font-size: 18px; font-weight: 700; color: #16a34a;" id="new-hires">-</span>
+                                    <span style="font-size: 11px; color: #16a34a;">입사</span>
+                                    <span style="font-size: 18px; font-weight: 700; color: #dc2626;" id="resignations">-</span>
+                                    <span style="font-size: 11px; color: #dc2626;">퇴사</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 채용 진행 포지션 -->
+                    <div style="background: white; border: 1px solid #e5e7eb; padding: 20px; border-radius: 8px;">
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <div style="width: 40px; height: 40px; background: #fef3c7; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                                <span style="font-size: 20px;">📋</span>
+                            </div>
+                            <div style="flex: 1;">
+                                <div style="font-size: 11px; color: #6b7280; margin-bottom: 4px;">채용 진행 포지션</div>
+                                <div style="font-size: 24px; font-weight: 700; color: #1f2937;" id="open-positions">0</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 인사팀 KPI 달성률 -->
+                    <div style="background: white; border: 1px solid #e5e7eb; padding: 20px; border-radius: 8px;">
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <div style="width: 40px; height: 40px; background: #fce7f3; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                                <span style="font-size: 20px;">🎯</span>
+                            </div>
+                            <div style="flex: 1;">
+                                <div style="font-size: 11px; color: #6b7280; margin-bottom: 4px;">인사팀 KPI 달성률</div>
+                                <div style="font-size: 24px; font-weight: 700; color: #1f2937;" id="hr-kpi">0%</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 중단 영역: 3개 섹션 -->
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 30px;">
+                    <!-- 채용 현황 -->
+                    <div style="background: white; border: 1px solid #e5e7eb; padding: 20px; border-radius: 8px;">
+                        <h3 style="margin-bottom: 16px; color: #1f2937; font-size: 14px; font-weight: 600;">채용 진행 현황</h3>
+                        <div id="recruitment-status" style="font-size: 12px;"></div>
+                    </div>
+                    
+                    <!-- 조직 건강도 & 리스크 -->
+                    <div style="background: white; border: 1px solid #e5e7eb; padding: 20px; border-radius: 8px;">
+                        <h3 style="margin-bottom: 16px; color: #1f2937; font-size: 14px; font-weight: 600;">조직 건강도 & 리스크</h3>
+                        <div id="org-health" style="font-size: 12px;"></div>
+                    </div>
+                    
+                    <!-- 목표 달성률 -->
+                    <div style="background: white; border: 1px solid #e5e7eb; padding: 20px; border-radius: 8px;">
+                        <h3 style="margin-bottom: 16px; color: #1f2937; font-size: 14px; font-weight: 600;">부서별 목표 달성률</h3>
+                        <div id="goal-achievement" style="font-size: 12px;"></div>
+                    </div>
+                </div>
+                
+                <!-- 하단 영역: 2개 차트 -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                    <div style="background: white; border: 1px solid #e5e7eb; padding: 20px; border-radius: 8px;">
+                        <h3 style="margin-bottom: 16px; color: #1f2937; font-size: 14px; font-weight: 600;">부서별 인원 현황</h3>
+                        <div id="dept-chart" style="max-height: 280px; overflow-y: auto;"></div>
+                    </div>
+                    
+                    <div style="background: white; border: 1px solid #e5e7eb; padding: 20px; border-radius: 8px;">
+                        <h3 style="margin-bottom: 16px; color: #1f2937; font-size: 14px; font-weight: 600;">직급별 인원 현황</h3>
+                        <div id="position-chart" style="max-height: 280px; overflow-y: auto;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="employee-info-tab" class="layout" style="display: none;">
             <div class="sidebar">
                 <div class="filter-section">
                     <h3>검색</h3>
@@ -772,9 +876,9 @@
             try {
                 await initializeData();
                 console.log('✅ 데이터 초기화 완료');
-                // 초기 탭 로드 - window 객체를 통해 호출
+                // 초기 탭 로드 - 대시보드를 첫 화면으로
                 if (typeof window.switchMainTab === 'function') {
-                    window.switchMainTab('employee-info');
+                    window.switchMainTab('dashboard');
                 }
                 console.log('✅ 초기 탭 로드 완료');
             } catch (error) {
@@ -789,6 +893,7 @@
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
             
             // 모든 탭 숨기기
+            document.getElementById('dashboard-tab').style.display = 'none';
             document.getElementById('employee-info-tab').style.display = 'none';
             document.getElementById('salary-info-tab').style.display = 'none';
             document.getElementById('employee-roster-tab').style.display = 'none';
@@ -798,7 +903,11 @@
             document.getElementById('admin-tab').style.display = 'none';
             
             // 선택된 탭 표시 및 버튼 활성화
-            if (tabName === 'employee-info') {
+            if (tabName === 'dashboard') {
+                document.getElementById('dashboard-tab').style.display = 'flex';
+                document.getElementById('tab-dashboard').classList.add('active');
+                loadDashboard();
+            } else if (tabName === 'employee-info') {
                 document.getElementById('employee-info-tab').style.display = 'flex';
                 document.getElementById('tab-employee').classList.add('active');
                 loadEmployees();  // 직원 목록 로드 추가
@@ -810,7 +919,7 @@
             } else if (tabName === 'employee-roster') {
                 document.getElementById('employee-roster-tab').style.display = 'flex';
                 document.getElementById('tab-employee-data').classList.add('active');
-                loadRoster();
+                window.loadRoster();
             } else if (tabName === 'org-chart') {
                 document.getElementById('org-chart-tab').style.display = 'flex';
                 document.getElementById('tab-employee-data').classList.add('active');
@@ -1832,8 +1941,218 @@
             event.target.value = '';
         }
 
+        // ===== HR 대시보드 =====
+        async function loadDashboard() {
+            showLoading();
+            
+            try {
+                // 모든 직원 데이터 로드
+                const employeesSnap = await window.getDocs(window.collection(window.db, 'employees'));
+                const employees = [];
+                employeesSnap.forEach(doc => {
+                    employees.push({ id: doc.id, ...doc.data() });
+                });
+                
+                // 법인 데이터 로드
+                const companiesSnap = await window.getDocs(window.collection(window.db, 'companies'));
+                const companies = {};
+                companiesSnap.forEach(doc => {
+                    const c = doc.data();
+                    companies[c.code] = c.name;
+                });
+                
+                // 부서 데이터 로드
+                const deptsSnap = await window.getDocs(window.collection(window.db, 'departments'));
+                const depts = {};
+                deptsSnap.forEach(doc => {
+                    const d = doc.data();
+                    depts[d.code] = d.name;
+                });
+                
+                const currentDate = new Date();
+                const currentMonth = currentDate.getFullYear() + '-' + String(currentDate.getMonth() + 1).padStart(2, '0');
+                
+                // ===== 상단 요약 카드 =====
+                
+                // 1. 전체 직원
+                document.getElementById('total-employees').textContent = employees.length;
+                
+                // 2. 이번 달 입사자
+                const newHires = employees.filter(emp => emp.hireDate && emp.hireDate.startsWith(currentMonth)).length;
+                document.getElementById('new-hires').textContent = newHires;
+                
+                // 3. 이번 달 퇴사자 (resignDate 필드 기준)
+                const resignations = employees.filter(emp => emp.resignDate && emp.resignDate.startsWith(currentMonth)).length;
+                document.getElementById('resignations').textContent = resignations;
+                
+                // 4. 채용 진행 포지션 (임시 데이터)
+                document.getElementById('open-positions').textContent = '0';
+                
+                // 5. 인사팀 KPI 달성률 (임시 데이터)
+                document.getElementById('hr-kpi').textContent = '0%';
+                
+                // ===== 중단 영역 =====
+                
+                // 채용 진행 현황
+                document.getElementById('recruitment-status').innerHTML = `
+                    <div style="color: #6b7280; text-align: center; padding: 40px 20px;">
+                        <div style="font-size: 32px; margin-bottom: 10px;">📝</div>
+                        <div style="font-size: 13px;">채용 진행 중인 포지션이 없습니다</div>
+                    </div>
+                `;
+                
+                // 조직 건강도 & 리스크
+                const avgTenure = calculateAvgTenure(employees, currentDate);
+                const highTurnoverDepts = calculateHighTurnover(employees, depts, currentDate);
+                
+                let healthHTML = '<div style="display: flex; flex-direction: column; gap: 12px;">';
+                
+                // 평균 근속연수
+                healthHTML += `
+                    <div style="display: flex; align-items: center; gap: 8px; padding: 10px; background: #f9fafb; border-radius: 6px;">
+                        <span style="font-size: 16px;">⏱️</span>
+                        <div style="flex: 1;">
+                            <div style="font-size: 11px; color: #6b7280; margin-bottom: 2px;">평균 근속연수</div>
+                            <div style="font-size: 16px; font-weight: 600; color: #1f2937;">${avgTenure}년</div>
+                        </div>
+                    </div>
+                `;
+                
+                // 이직 위험 부서
+                if (highTurnoverDepts.length > 0) {
+                    healthHTML += `
+                        <div style="display: flex; align-items: start; gap: 8px; padding: 10px; background: #fef2f2; border-radius: 6px; border-left: 3px solid #dc2626;">
+                            <span style="font-size: 16px;">⚠️</span>
+                            <div style="flex: 1;">
+                                <div style="font-size: 11px; color: #991b1b; margin-bottom: 4px; font-weight: 600;">이직 위험 부서</div>
+                                <div style="font-size: 11px; color: #6b7280;">${highTurnoverDepts.join(', ')}</div>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    healthHTML += `
+                        <div style="display: flex; align-items: center; gap: 8px; padding: 10px; background: #f0fdf4; border-radius: 6px;">
+                            <span style="font-size: 16px;">✅</span>
+                            <div style="font-size: 11px; color: #166534;">조직 건강도 양호</div>
+                        </div>
+                    `;
+                }
+                
+                healthHTML += '</div>';
+                document.getElementById('org-health').innerHTML = healthHTML;
+                
+                // 목표 달성률
+                document.getElementById('goal-achievement').innerHTML = `
+                    <div style="color: #6b7280; text-align: center; padding: 40px 20px;">
+                        <div style="font-size: 32px; margin-bottom: 10px;">🎯</div>
+                        <div style="font-size: 13px;">목표 데이터 준비 중</div>
+                    </div>
+                `;
+                
+                // ===== 하단 차트 =====
+                
+                // 부서별 인원 현황
+                const deptCounts = {};
+                employees.forEach(emp => {
+                    const deptName = depts[emp.departmentCode] || emp.departmentCode || '미지정';
+                    deptCounts[deptName] = (deptCounts[deptName] || 0) + 1;
+                });
+                
+                let deptChartHTML = '<div style="display: flex; flex-direction: column; gap: 8px;">';
+                Object.entries(deptCounts).sort((a, b) => b[1] - a[1]).forEach(([dept, count]) => {
+                    const percentage = ((count / employees.length) * 100).toFixed(1);
+                    deptChartHTML += `
+                        <div>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                                <span style="font-size: 12px; color: #374151;">${dept}</span>
+                                <span style="font-size: 12px; font-weight: 600; color: #1f2937;">${count}명 (${percentage}%)</span>
+                            </div>
+                            <div style="background: #e5e7eb; height: 6px; border-radius: 3px; overflow: hidden;">
+                                <div style="background: #3b82f6; height: 100%; width: ${percentage}%;"></div>
+                            </div>
+                        </div>
+                    `;
+                });
+                deptChartHTML += '</div>';
+                document.getElementById('dept-chart').innerHTML = deptChartHTML;
+                
+                // 직급별 인원 현황
+                const positionCounts = {};
+                employees.forEach(emp => {
+                    const position = emp.position || '미지정';
+                    positionCounts[position] = (positionCounts[position] || 0) + 1;
+                });
+                
+                let positionChartHTML = '<div style="display: flex; flex-direction: column; gap: 8px;">';
+                Object.entries(positionCounts).sort((a, b) => b[1] - a[1]).forEach(([position, count]) => {
+                    const percentage = ((count / employees.length) * 100).toFixed(1);
+                    positionChartHTML += `
+                        <div>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                                <span style="font-size: 12px; color: #374151;">${position}</span>
+                                <span style="font-size: 12px; font-weight: 600; color: #1f2937;">${count}명 (${percentage}%)</span>
+                            </div>
+                            <div style="background: #e5e7eb; height: 6px; border-radius: 3px; overflow: hidden;">
+                                <div style="background: #8b5cf6; height: 100%; width: ${percentage}%;"></div>
+                            </div>
+                        </div>
+                    `;
+                });
+                positionChartHTML += '</div>';
+                document.getElementById('position-chart').innerHTML = positionChartHTML;
+                
+            } catch (error) {
+                console.error('대시보드 로드 오류:', error);
+                alert('대시보드 로드 오류: ' + error.message);
+            }
+            
+            hideLoading();
+        }
+        
+        // 헬퍼 함수들
+        function calculateAvgTenure(employees, currentDate) {
+            let totalTenure = 0;
+            let count = 0;
+            employees.forEach(emp => {
+                if (emp.hireDate) {
+                    const hireDate = new Date(emp.hireDate);
+                    const years = (currentDate - hireDate) / (1000 * 60 * 60 * 24 * 365);
+                    totalTenure += years;
+                    count++;
+                }
+            });
+            return count > 0 ? (totalTenure / count).toFixed(1) : '0';
+        }
+        
+        function calculateHighTurnover(employees, depts, currentDate) {
+            // 최근 6개월 이내 퇴사자가 많은 부서 찾기
+            const sixMonthsAgo = new Date(currentDate);
+            sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+            
+            const deptResignations = {};
+            employees.forEach(emp => {
+                if (emp.resignDate) {
+                    const resignDate = new Date(emp.resignDate);
+                    if (resignDate >= sixMonthsAgo) {
+                        const deptName = depts[emp.departmentCode] || emp.departmentCode || '미지정';
+                        deptResignations[deptName] = (deptResignations[deptName] || 0) + 1;
+                    }
+                }
+            });
+            
+            // 2명 이상 퇴사한 부서
+            return Object.entries(deptResignations)
+                .filter(([_, count]) => count >= 2)
+                .map(([dept, _]) => dept);
+        }
+                alert('대시보드 로드 오류: ' + error.message);
+            }
+            
+            hideLoading();
+        }
+
         // ===== 임직원 명부 =====
-        async function loadRoster() {
+        window.loadRoster = async function() {
             showLoading();
             
             // 현재 필터 값 저장
