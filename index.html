@@ -213,16 +213,16 @@
                         <div id="recruitment-status" style="font-size: 12px;"></div>
                     </div>
                     
-                    <!-- 조직 건강도 & 리스크 -->
+                    <!-- 계약만료 도래 임직원 -->
                     <div style="background: white; border: 1px solid #e5e7eb; padding: 20px; border-radius: 8px;">
-                        <h3 style="margin-bottom: 16px; color: #1f2937; font-size: 14px; font-weight: 600;">조직 건강도 & 리스크</h3>
+                        <h3 style="margin-bottom: 16px; color: #1f2937; font-size: 14px; font-weight: 600;">📋 계약만료 도래 임직원</h3>
                         <div id="org-health" style="font-size: 12px;"></div>
                     </div>
                     
-                    <!-- 목표 달성률 -->
+                    <!-- 휴직 임직원 명단 -->
                     <div style="background: white; border: 1px solid #e5e7eb; padding: 20px; border-radius: 8px;">
-                        <h3 style="margin-bottom: 16px; color: #1f2937; font-size: 14px; font-weight: 600;">부서별 목표 달성률</h3>
-                        <div id="goal-achievement" style="font-size: 12px;"></div>
+                        <h3 style="margin-bottom: 16px; color: #1f2937; font-size: 14px; font-weight: 600;">🏖️ 휴직 임직원 명단</h3>
+                        <div id="recent-activities" style="font-size: 12px;"></div>
                     </div>
                 </div>
                 
@@ -276,8 +276,15 @@
         <!-- 면접 전형 탭 -->
         <div id="recruitment-interviews-tab" class="layout" style="display: none;">
             <div class="main-content" style="padding: 30px;">
-                <h2>면접 전형</h2>
-                <div class="empty-state"><p>준비 중입니다</p></div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h2>면접 전형</h2>
+                    <button class="btn btn-primary" onclick="window.showAddIntervieweeFormSimple()">+ 면접자 등록</button>
+                </div>
+                
+                <!-- 칸반 보드 -->
+                <div id="interview-kanban-board" style="display: flex; gap: 15px; overflow-x: auto; padding-bottom: 20px;">
+                    <!-- 채용 포지션들이 동적으로 추가됨 -->
+                </div>
             </div>
         </div>
 
@@ -293,11 +300,11 @@
             <div class="sidebar">
                 <div class="filter-section">
                     <h3>검색</h3>
-                    <input type="text" id="search-employee" placeholder="이름/사번..." oninput="filterEmployees()">
+                    <input type="text" id="search-employee" placeholder="이름/사번..." oninput="window.filterEmployees()">
                 </div>
                 <div class="filter-section">
                     <h3>법인</h3>
-                    <select id="filter-company" onchange="filterEmployees()"></select>
+                    <select id="filter-company" onchange="window.filterEmployees()"></select>
                 </div>
                 <div style="padding: 0 15px 10px; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid #e0e0e0;">
                     <input type="checkbox" id="select-all-checkbox" onclick="toggleSelectAll()" style="width: 16px; height: 16px; cursor: pointer;">
@@ -662,30 +669,6 @@
                 <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px;" id="company-list">
                     <div style="text-align: center; padding: 40px; color: #999;">법인 목록을 불러오는 중...</div>
                 </div>
-
-                <!-- 부서 관리 섹션 -->
-                <h2 style="margin: 40px 0 20px 0;">부서 관리</h2>
-                
-                <div style="margin-bottom: 30px;">
-                    <button class="btn btn-primary" onclick="showAddDeptForm()">+ 부서 추가</button>
-                </div>
-
-                <div style="overflow-x: auto;">
-                    <table style="width: 100%; border-collapse: collapse; background: white;">
-                        <thead style="background: #f5f5f5;">
-                            <tr>
-                                <th style="padding: 12px; border: 1px solid #ddd;">부서명</th>
-                                <th style="padding: 12px; border: 1px solid #ddd;">근무지</th>
-                                <th style="padding: 12px; border: 1px solid #ddd;">관리</th>
-                            </tr>
-                        </thead>
-                        <tbody id="dept-list">
-                            <tr>
-                                <td colspan="3" style="padding: 20px; text-align: center; color: #999;">부서 목록을 불러오는 중...</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
             </div>
         </div>
 
@@ -717,13 +700,6 @@
                         <button class="btn btn-outline" onclick="addSetting('jobRole')" style="width: 100%; padding: 8px;">+ 직책 추가</button>
                     </div>
 
-                    <!-- 근무지 설정 -->
-                    <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-                        <h3 style="margin-bottom: 15px; color: #1976d2;">근무지 설정</h3>
-                        <div id="location-list" style="margin-bottom: 15px; max-height: 200px; overflow-y: auto;"></div>
-                        <button class="btn btn-outline" onclick="addSetting('location')" style="width: 100%; padding: 8px;">+ 근무지 추가</button>
-                    </div>
-
                     <!-- 고용형태 설정 -->
                     <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
                         <h3 style="margin-bottom: 15px; color: #1976d2;">고용형태 설정</h3>
@@ -731,9 +707,54 @@
                         <button class="btn btn-outline" onclick="addSetting('employmentType')" style="width: 100%; padding: 8px;">+ 고용형태 추가</button>
                     </div>
 
+                    <!-- 부서 설정 -->
+                    <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                        <h3 style="margin-bottom: 15px; color: #1976d2;">부서 설정</h3>
+                        <div id="dept-list-box" style="margin-bottom: 15px; max-height: 200px; overflow-y: auto;"></div>
+                        <button class="btn btn-outline" onclick="showAddDeptForm()" style="width: 100%; padding: 8px;">+ 부서 추가</button>
+                    </div>
+
+                    <!-- 근무지 설정 -->
+                    <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                        <h3 style="margin-bottom: 15px; color: #1976d2;">근무지 설정</h3>
+                        <div id="location-list" style="margin-bottom: 15px; max-height: 200px; overflow-y: auto;"></div>
+                        <button class="btn btn-outline" onclick="addSetting('location')" style="width: 100%; padding: 8px;">+ 근무지 추가</button>
+                    </div>
+
                     <!-- 명부 정렬 기준 설정 -->
                     <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
                         <h3 style="margin-bottom: 15px; color: #1976d2;">임직원 명부 정렬 기준</h3>
+                        
+                        <div style="margin-bottom: 15px; padding: 10px; background: #f0f7ff; border-left: 3px solid #2196F3; border-radius: 4px;">
+                            <div style="font-size: 11px; font-weight: bold; color: #1976d2; margin-bottom: 8px;">📊 임원·자문/고문 정렬</div>
+                            
+                            <div style="margin-bottom: 8px;">
+                                <label style="font-size: 11px; color: #666; display: block; margin-bottom: 4px;">정렬 기준 1 (1차)</label>
+                                <select id="exec-sort-1" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px;">
+                                    <option value="jobRole">직책순 (기본)</option>
+                                    <option value="jobTitle">직위순</option>
+                                    <option value="department">부서순</option>
+                                    <option value="name">이름순</option>
+                                    <option value="hireDate">입사일순</option>
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label style="font-size: 11px; color: #666; display: block; margin-bottom: 4px;">정렬 기준 2 (2차)</label>
+                                <select id="exec-sort-2" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px;">
+                                    <option value="">선택 안 함</option>
+                                    <option value="jobRole">직책순</option>
+                                    <option value="jobTitle">직위순</option>
+                                    <option value="department">부서순</option>
+                                    <option value="name">이름순</option>
+                                    <option value="hireDate">입사일순</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div style="margin-bottom: 10px; padding-top: 10px; border-top: 1px solid #e0e0e0;">
+                            <div style="font-size: 11px; font-weight: bold; color: #666; margin-bottom: 8px;">👥 일반 직원 정렬</div>
+                        </div>
                         
                         <div style="margin-bottom: 10px;">
                             <label style="font-size: 12px; color: #666; display: block; margin-bottom: 5px;">정렬 기준 1 (1차)</label>
@@ -839,15 +860,19 @@
         console.log('🔒 Firebase Authentication 활성화');
 
         let currentAuthUser = null;
+        window.currentUser = null;
 
         // 인증 상태 감지
         onAuthStateChanged(auth, async (user) => {
             if (user) {
                 console.log('✅ 로그인됨:', user.email);
                 currentAuthUser = user;
+                window.currentUser = user;
                 await showMainScreen(user);
             } else {
                 console.log('❌ 로그아웃 상태');
+                currentAuthUser = null;
+                window.currentUser = null;
                 showLoginScreen();
             }
         });
@@ -866,6 +891,7 @@
             errorMsg.style.display = 'none';
             
             try {
+                // Firebase Authentication 사용
                 await signInWithEmailAndPassword(auth, email, password);
                 console.log('✅ 로그인 성공');
             } catch (error) {
@@ -894,18 +920,50 @@
         }
 
         async function showMainScreen(user) {
+            console.log('📱 메인 화면 표시 시작');
             document.getElementById('login-screen').style.display = 'none';
             document.getElementById('main-screen').classList.add('active');
             
             const userName = user.email.split('@')[0];
             document.getElementById('current-user').textContent = userName;
             
-            // window 객체를 통해 함수 호출 (정의 순서에 관계없이 안전하게 호출)
-            if (typeof window.loadCompanyFilters === 'function') {
-                await window.loadCompanyFilters();
+            // 사용자 권한 체크
+            try {
+                const userDoc = await window.getDoc(window.doc(window.db, 'users', user.email));
+                if (userDoc.exists()) {
+                    const userData = userDoc.data();
+                    window.currentUserRole = userData.role || 'viewer'; // admin 또는 viewer
+                    console.log('👤 사용자 권한:', window.currentUserRole);
+                    
+                    // 권한에 따라 UI 조정
+                    applyRolePermissions(window.currentUserRole);
+                } else {
+                    // users 컬렉션에 없으면 admin으로 간주 (기존 관리자)
+                    window.currentUserRole = 'admin';
+                    console.log('👤 관리자 계정 (기본)');
+                }
+            } catch (error) {
+                console.error('권한 체크 오류:', error);
+                window.currentUserRole = 'admin'; // 오류 시 admin으로 처리
             }
-            if (typeof window.loadEmployees === 'function') {
-                await window.loadEmployees();
+            
+            console.log('🔄 초기 데이터 로딩 시작');
+            showLoading();
+            
+            try {
+                // 초기 데이터 로드
+                await initializeData();
+                
+                // 대시보드를 첫 화면으로
+                if (typeof window.switchMainTab === 'function') {
+                    window.switchMainTab('dashboard');
+                }
+                
+                console.log('✅ 메인 화면 로딩 완료');
+            } catch (error) {
+                console.error('❌ 메인 화면 로딩 오류:', error);
+            } finally {
+                hideLoading();
             }
         }
 
@@ -918,6 +976,73 @@
                     console.error('❌ 로그아웃 오류:', error);
                 }
             }
+        }
+        
+        // 권한에 따른 UI 제어
+        function applyRolePermissions(role) {
+            if (role === 'viewer') {
+                console.log('🔒 읽기 전용 모드 활성화');
+                
+                // 모든 저장/수정/삭제 버튼 숨기기
+                const hideButtons = [
+                    '.btn-primary',      // 저장, 등록 버튼
+                    'button[onclick*="save"]',
+                    'button[onclick*="add"]',
+                    'button[onclick*="delete"]',
+                    'button[onclick*="edit"]',
+                    '#add-employee-btn',
+                    '.delete-btn'
+                ];
+                
+                hideButtons.forEach(selector => {
+                    document.querySelectorAll(selector).forEach(btn => {
+                        // 엑셀 다운로드 버튼은 제외
+                        if (!btn.textContent.includes('Excel') && 
+                            !btn.textContent.includes('엑셀') &&
+                            !btn.textContent.includes('다운로드')) {
+                            btn.style.display = 'none';
+                        }
+                    });
+                });
+                
+                // 시스템 관리자 탭 숨기기
+                const adminTab = document.getElementById('tab-admin');
+                if (adminTab) {
+                    adminTab.style.display = 'none';
+                }
+                
+                // 모든 input, select, textarea를 readonly로
+                setTimeout(() => {
+                    document.querySelectorAll('input:not([type="search"]), select, textarea').forEach(el => {
+                        if (!el.id.includes('search') && !el.id.includes('filter')) {
+                            el.setAttribute('readonly', 'readonly');
+                            el.setAttribute('disabled', 'disabled');
+                            el.style.backgroundColor = '#f5f5f5';
+                            el.style.cursor = 'not-allowed';
+                        }
+                    });
+                }, 1000);
+                
+                // 페이지 전환 시에도 적용
+                const originalSwitchTab = window.switchMainTab;
+                window.switchMainTab = function(tabName) {
+                    originalSwitchTab(tabName);
+                    setTimeout(() => applyRolePermissions('viewer'), 500);
+                };
+                
+            } else {
+                console.log('🔓 관리자 모드');
+            }
+        }
+        
+        // saveEmployee 함수 권한 체크 추가
+        const originalSaveEmployee = window.saveEmployee;
+        window.saveEmployee = async function(e) {
+            if (window.currentUserRole === 'viewer') {
+                alert('⚠️ 읽기 전용 계정입니다. 수정 권한이 없습니다.');
+                return false;
+            }
+            return await originalSaveEmployee(e);
         }
         
         // ====== 이하 유틸리티 및 데이터 함수들 ======
@@ -966,22 +1091,10 @@
             }
         }
 
-        window.addEventListener('DOMContentLoaded', async function() {
-            console.log('✅ 페이지 로딩 시작');
-            showLoading();
-            try {
-                await initializeData();
-                console.log('✅ 데이터 초기화 완료');
-                // 초기 탭 로드 - 대시보드를 첫 화면으로
-                if (typeof window.switchMainTab === 'function') {
-                    window.switchMainTab('dashboard');
-                }
-                console.log('✅ 초기 탭 로드 완료');
-            } catch (error) {
-                console.error('❌ 초기화 오류:', error);
-                alert('초기화 오류: ' + error.message);
-            }
-            hideLoading();
+        // 페이지 로드 시 로그인 화면 표시
+        window.addEventListener('DOMContentLoaded', function() {
+            console.log('✅ 페이지 로드 완료');
+            // Firebase Auth가 자동으로 onAuthStateChanged 호출
         });
 
         window.switchMainTab = function(tabName) {
@@ -1014,14 +1127,15 @@
             } else if (tabName === 'recruitment-interviews') {
                 document.getElementById('recruitment-interviews-tab').style.display = 'flex';
                 document.getElementById('tab-recruitment').classList.add('active');
+                window.loadInterviews();
             } else if (tabName === 'recruitment-history') {
                 document.getElementById('recruitment-history-tab').style.display = 'flex';
                 document.getElementById('tab-recruitment').classList.add('active');
             } else if (tabName === 'employee-info') {
                 document.getElementById('employee-info-tab').style.display = 'flex';
                 document.getElementById('tab-employee').classList.add('active');
-                loadEmployees();
-                loadCompanyFilters();
+                window.loadCompanyFilters();
+                window.loadEmployees();
             } else if (tabName === 'employee-roster') {
                 document.getElementById('employee-roster-tab').style.display = 'flex';
                 document.getElementById('tab-employee').classList.add('active');
@@ -1070,11 +1184,11 @@
             snapshot.forEach(doc => {
                 allEmployees.push({ id: doc.id, ...doc.data() });
             });
-            filterEmployees();
+            window.filterEmployees();
             hideLoading();
         }
 
-        function filterEmployees() {
+        window.filterEmployees = function() {
             const search = document.getElementById('search-employee').value.toLowerCase();
             const company = document.getElementById('filter-company').value;
             
@@ -1108,6 +1222,11 @@
         }
 
         window.deleteSelectedEmployees = async function() {
+            if (window.currentUserRole === 'viewer') {
+                alert('⚠️ 읽기 전용 계정입니다. 삭제 권한이 없습니다.');
+                return;
+            }
+            
             console.log('✅ deleteSelectedEmployees 호출됨');
             const checkboxes = document.querySelectorAll('.employee-checkbox:checked');
             if (checkboxes.length === 0) {
@@ -1180,14 +1299,20 @@
             let companyName = emp.companyCode;
             let deptName = emp.departmentCode;
             
+            // 권한에 따라 버튼 표시/숨김
+            const isViewer = window.currentUserRole === 'viewer';
+            const buttonHTML = isViewer ? '' : `
+                <div class="button-group" style="margin: 0;">
+                    <button class="btn btn-primary" onclick="editEmployee('${id}')">수정</button>
+                    <button class="btn btn-secondary" onclick="deleteEmployee('${id}')">삭제</button>
+                </div>
+            `;
+            
             document.getElementById('employee-detail').innerHTML = `
                 <div style="max-width: 1200px;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
                         <h2>${emp.name} (${emp.id})</h2>
-                        <div class="button-group" style="margin: 0;">
-                            <button class="btn btn-primary" onclick="editEmployee('${id}')">수정</button>
-                            <button class="btn btn-secondary" onclick="deleteEmployee('${id}')">삭제</button>
-                        </div>
+                        ${buttonHTML}
                     </div>
                     
                     <!-- 인적정보 -->
@@ -1365,6 +1490,11 @@
         }
 
         async function deleteEmployee(id) {
+            if (window.currentUserRole === 'viewer') {
+                alert('⚠️ 읽기 전용 계정입니다. 삭제 권한이 없습니다.');
+                return;
+            }
+            
             const emp = allEmployees.find(e => e.id === id);
             const empName = emp ? emp.name : id;
             
@@ -1389,12 +1519,20 @@
             hideLoading();
         }
 
-        function editEmployee(id) {
+        window.editEmployee = function(id) {
+            if (window.currentUserRole === 'viewer') {
+                alert('⚠️ 읽기 전용 계정입니다. 수정 권한이 없습니다.');
+                return;
+            }
             const emp = allEmployees.find(e => e.id === id);
             showEmployeeForm(emp);
         }
 
         window.showNewEmployeeForm = function() {
+            if (window.currentUserRole === 'viewer') {
+                alert('⚠️ 읽기 전용 계정입니다. 등록 권한이 없습니다.');
+                return;
+            }
             console.log('✅ showNewEmployeeForm 호출됨');
             showEmployeeForm();
         }
@@ -1433,7 +1571,7 @@
                         <button type="button" class="btn btn-primary" onclick="document.getElementById('excel-upload').click()">📤 엑셀 업로드</button>
                     </div>
                 </div>
-                <form id="emp-form" onsubmit="saveEmployee(event)">
+                <form id="emp-form">
                     <div class="detail-tabs">
                         <button type="button" class="detail-tab active" onclick="switchTab(event, 'personal')">인적정보</button>
                         <button type="button" class="detail-tab" onclick="switchTab(event, 'employment')">재직정보</button>
@@ -1570,12 +1708,33 @@
                                 <td><input type="date" name="resignDate" value="${emp?.resignDate || ''}"></td>
                                 <th class="required">재직상태</th>
                                 <td>
-                                    <select name="workStatus" required>
+                                    <select name="workStatus" id="workStatus" onchange="toggleLeaveFields()" required>
                                         <option value="재직" ${!emp || emp.workStatus === '재직' ? 'selected' : ''}>재직</option>
                                         <option value="휴직" ${emp?.workStatus === '휴직' ? 'selected' : ''}>휴직</option>
                                         <option value="퇴직" ${emp?.workStatus === '퇴직' ? 'selected' : ''}>퇴직</option>
                                     </select>
                                 </td>
+                            </tr>
+                            
+                            <!-- 휴직 관련 필드 (휴직 선택 시에만 표시) -->
+                            <tr id="leave-type-row" style="display: ${emp?.workStatus === '휴직' ? 'table-row' : 'none'};">
+                                <th>휴직종류</th>
+                                <td>
+                                    <select name="leaveType" id="leaveType" onchange="toggleLeaveDates()">
+                                        <option value="">선택</option>
+                                        <option value="출산휴가" ${emp?.leaveType === '출산휴가' ? 'selected' : ''}>출산휴가</option>
+                                        <option value="육아휴직" ${emp?.leaveType === '육아휴직' ? 'selected' : ''}>육아휴직</option>
+                                        <option value="병가" ${emp?.leaveType === '병가' ? 'selected' : ''}>병가</option>
+                                        <option value="기타" ${emp?.leaveType === '기타' ? 'selected' : ''}>기타</option>
+                                    </select>
+                                </td>
+                                <th colspan="2"></th>
+                            </tr>
+                            <tr id="leave-dates-row" style="display: ${emp?.workStatus === '휴직' && emp?.leaveType ? 'table-row' : 'none'};">
+                                <th>휴직 시작일</th>
+                                <td><input type="date" name="leaveStartDate" id="leaveStartDate" value="${emp?.leaveStartDate || ''}"></td>
+                                <th>휴직 종료일</th>
+                                <td><input type="date" name="leaveEndDate" id="leaveEndDate" value="${emp?.leaveEndDate || ''}"></td>
                             </tr>
                             <tr>
                                 <th class="required">법인</th>
@@ -1587,9 +1746,9 @@
                                 </td>
                                 <th class="required">근무지</th>
                                 <td>
-                                    <select name="workLocation" id="workLocation" onchange="filterDepartmentsByLocation()" required>
+                                    <select name="workLocation" id="workLocation" required>
                                         <option value="">선택</option>
-                                        ${[...new Set(depts.map(d => d.location).filter(l => l))].map(loc => `<option value="${loc}" ${emp?.workLocation === loc ? 'selected' : ''}>${loc}</option>`).join('')}
+                                        ${(settings.locations || []).map(loc => `<option value="${loc}" ${emp?.workLocation === loc ? 'selected' : ''}>${loc}</option>`).join('')}
                                     </select>
                                 </td>
                             </tr>
@@ -1597,15 +1756,15 @@
                                 <th class="required">부서</th>
                                 <td colspan="3">
                                     <select name="departmentCode" id="departmentCode" required>
-                                        <option value="">근무지를 먼저 선택하세요</option>
-                                        ${depts.map(d => `<option value="${d.code}" data-location="${d.location}" ${emp?.departmentCode === d.code ? 'selected' : ''}>${d.name}</option>`).join('')}
+                                        <option value="">선택</option>
+                                        ${depts.map(d => `<option value="${d.code}" ${emp?.departmentCode === d.code ? 'selected' : ''}>${d.name}</option>`).join('')}
                                     </select>
                                 </td>
                             </tr>
                             <tr>
                                 <th class="required">고용형태</th>
                                 <td>
-                                    <select name="employmentType" required>
+                                    <select name="employmentType" id="employmentType" onchange="toggleContractFields()" required>
                                         <option value="">선택</option>
                                         ${(settings.employmentTypes || []).map(type => `<option value="${type}" ${emp?.employmentType === type ? 'selected' : ''}>${type}</option>`).join('')}
                                     </select>
@@ -1617,6 +1776,14 @@
                                         ${(settings.positions || []).map(pos => `<option value="${pos}" ${emp?.position === pos ? 'selected' : ''}>${pos}</option>`).join('')}
                                     </select>
                                 </td>
+                            </tr>
+                            
+                            <!-- 계약 기간 필드 (계약직 선택 시에만 표시) -->
+                            <tr id="contract-dates-row" style="display: ${emp?.employmentType === '계약직' ? 'table-row' : 'none'};">
+                                <th>계약 시작일</th>
+                                <td><input type="date" name="contractStartDate" id="contractStartDate" value="${emp?.contractStartDate || ''}"></td>
+                                <th>계약 만료일</th>
+                                <td><input type="date" name="contractEndDate" id="contractEndDate" value="${emp?.contractEndDate || ''}"></td>
                             </tr>
                             <tr>
                                 <th>직위</th>
@@ -1703,6 +1870,17 @@
                     </div>
                 </form>
             `;
+            
+            // 폼 제출 이벤트 리스너 추가
+            setTimeout(() => {
+                const form = document.getElementById('emp-form');
+                if (form) {
+                    form.addEventListener('submit', async (e) => {
+                        e.preventDefault();
+                        await window.saveEmployee(e);
+                    });
+                }
+            }, 100);
         }
 
         window.switchTab = function(e, tab) {
@@ -1770,6 +1948,7 @@
             }
             
             hideLoading();
+            return false;
         }
 
         window.cancelForm = function() {
@@ -1781,6 +1960,58 @@
                 </div>
                 <div class="empty-state"><h3>직원을 선택하거나 신규 등록하세요</h3></div>
             `;
+        }
+
+        // 휴직 필드 토글
+        window.toggleLeaveFields = function() {
+            const workStatus = document.getElementById('workStatus').value;
+            const leaveTypeRow = document.getElementById('leave-type-row');
+            const leaveDatesRow = document.getElementById('leave-dates-row');
+            
+            if (workStatus === '휴직') {
+                leaveTypeRow.style.display = 'table-row';
+                // 휴직 종류가 선택되어 있으면 날짜 필드도 표시
+                const leaveType = document.getElementById('leaveType').value;
+                if (leaveType) {
+                    leaveDatesRow.style.display = 'table-row';
+                }
+            } else {
+                leaveTypeRow.style.display = 'none';
+                leaveDatesRow.style.display = 'none';
+                // 휴직이 아니면 휴직 관련 필드 초기화
+                document.getElementById('leaveType').value = '';
+                document.getElementById('leaveStartDate').value = '';
+                document.getElementById('leaveEndDate').value = '';
+            }
+        }
+
+        // 휴직 날짜 필드 토글
+        window.toggleLeaveDates = function() {
+            const leaveType = document.getElementById('leaveType').value;
+            const leaveDatesRow = document.getElementById('leave-dates-row');
+            
+            if (leaveType) {
+                leaveDatesRow.style.display = 'table-row';
+            } else {
+                leaveDatesRow.style.display = 'none';
+                document.getElementById('leaveStartDate').value = '';
+                document.getElementById('leaveEndDate').value = '';
+            }
+        }
+
+        // 계약 기간 필드 토글
+        window.toggleContractFields = function() {
+            const employmentType = document.getElementById('employmentType').value;
+            const contractDatesRow = document.getElementById('contract-dates-row');
+            
+            if (employmentType === '계약직') {
+                contractDatesRow.style.display = 'table-row';
+            } else {
+                contractDatesRow.style.display = 'none';
+                // 계약직이 아니면 계약 기간 필드 초기화
+                document.getElementById('contractStartDate').value = '';
+                document.getElementById('contractEndDate').value = '';
+            }
         }
 
         // ===== 엑셀 다운로드 (양식) =====
@@ -2363,6 +2594,508 @@
             hideLoading();
         }
 
+        // ===== 면접 전형 관리 (칸반 보드) =====
+        window.loadInterviews = async function() {
+            showLoading();
+            
+            try {
+                // 채용 포지션 로드
+                const positionsSnap = await window.getDocs(window.collection(window.db, 'recruitmentPositions'));
+                const activePositions = [];
+                positionsSnap.forEach(doc => {
+                    const pos = doc.data();
+                    if (pos.status === 'active') {
+                        activePositions.push({ id: doc.id, ...pos });
+                    }
+                });
+                
+                // 면접자 데이터 로드
+                const interviewsSnap = await window.getDocs(window.collection(window.db, 'interviews'));
+                const interviews = [];
+                interviewsSnap.forEach(doc => {
+                    interviews.push({ id: doc.id, ...doc.data() });
+                });
+                
+                // 칸반 보드 생성 - 완전히 가로 방향
+                const board = document.getElementById('interview-kanban-board');
+                board.innerHTML = '';
+                
+                if (activePositions.length === 0) {
+                    board.innerHTML = `
+                        <div style="width: 100%; padding: 60px; text-align: center; color: #999;">
+                            <div style="font-size: 48px; margin-bottom: 20px;">📋</div>
+                            <div style="font-size: 16px; margin-bottom: 10px;">진행중인 채용 포지션이 없습니다</div>
+                            <div style="font-size: 14px;">먼저 채용 포지션을 등록해주세요</div>
+                        </div>
+                    `;
+                } else {
+                    // 가로로 4개 스테이지 생성
+                    board.innerHTML = `
+                        <div style="display: flex; gap: 20px; overflow-x: auto; padding-bottom: 20px;">
+                            ${createStageColumn('포지션', activePositions, interviews, 'position')}
+                            ${createStageColumn('1차 면접', activePositions, interviews, '1차 면접 대상')}
+                            ${createStageColumn('2차 면접', activePositions, interviews, '2차 면접 대상')}
+                            ${createStageColumn('합격', activePositions, interviews, '합격')}
+                        </div>
+                    `;
+                }
+                
+            } catch (error) {
+                console.error('면접 전형 로드 오류:', error);
+                alert('면접 전형 로드 오류: ' + error.message);
+            }
+            
+            hideLoading();
+        }
+        
+        function createStageColumn(title, positions, interviews, stage) {
+            const isPosition = stage === 'position';
+            const bgColor = stage === '합격' ? '#ecfdf5' : '#f9fafb';
+            const titleColor = stage === '합격' ? '#10b981' : '#1f2937';
+            
+            let html = `
+                <div style="min-width: 320px; background: ${bgColor}; border-radius: 8px; padding: 20px; border: 1px solid #e5e7eb;">
+                    <h3 style="margin: 0 0 20px 0; font-size: 18px; font-weight: 700; color: ${titleColor};">
+                        ${title}
+                    </h3>
+            `;
+            
+            if (isPosition) {
+                // 포지션 목록 - 각 포지션마다 해당 포지션의 전체 면접자 수로 높이 계산
+                positions.forEach(pos => {
+                    const posInterviews = interviews.filter(i => i.positionId === pos.id);
+                    // 카드 1개당 약 85px, 최소 80px
+                    const calculatedHeight = posInterviews.length > 0 
+                        ? Math.max(80, posInterviews.length * 85) 
+                        : 80;
+                    
+                    html += `
+                        <div style="margin-bottom: 15px;">
+                            <div style="font-size: 11px; color: #6b7280; margin-bottom: 8px; font-weight: 600;">
+                                ${pos.jobTitle}
+                            </div>
+                            <div style="background: white; padding: 15px; border-radius: 6px; border: 2px solid #3b82f6; min-height: ${calculatedHeight}px; display: flex; flex-direction: column; justify-content: center;">
+                                <div style="font-weight: 600; font-size: 13px; color: #1f2937; margin-bottom: 6px;">${pos.position} | ${pos.location}</div>
+                                <div style="font-size: 10px; color: #9ca3af;">등록: ${pos.createdAt || '-'}</div>
+                            </div>
+                        </div>
+                    `;
+                });
+            } else {
+                // 각 포지션별 해당 스테이지의 면접자들
+                positions.forEach(pos => {
+                    const posInterviews = interviews.filter(i => 
+                        i.positionId === pos.id && 
+                        (i.status === stage || (!i.status && stage === '1차 면접 대상'))
+                    );
+                    
+                    html += `
+                        <div style="margin-bottom: 15px;">
+                            <div style="font-size: 11px; color: #6b7280; margin-bottom: 8px; font-weight: 600;">
+                                ${pos.jobTitle} (${posInterviews.length})
+                            </div>
+                            <div id="stage-${stage}-${pos.id}" 
+                                 class="interview-stage" 
+                                 data-position-id="${pos.id}" 
+                                 data-stage="${stage}"
+                                 ondrop="window.handleDrop(event)" 
+                                 ondragover="window.handleDragOver(event)"
+                                 style="min-height: 80px; background: white; border-radius: 6px; padding: 8px; border: 2px dashed #e5e7eb;">
+                                ${posInterviews.map(i => createIntervieweeCard(i, pos)).join('')}
+                                ${posInterviews.length === 0 ? '<div style="padding: 15px; text-align: center; color: #d1d5db; font-size: 11px;">드래그하여 추가</div>' : ''}
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+            
+            html += '</div>';
+            return html;
+        }
+        
+        function createIntervieweeCard(interviewee, position) {
+            const isPass = interviewee.status === '합격';
+            const bgColor = isPass ? '#ffffff' : '#ffffff';
+            const borderColor = isPass ? '#10b981' : '#e5e7eb';
+            
+            return `
+                <div class="interviewee-card" 
+                     draggable="true"
+                     data-id="${interviewee.id}"
+                     ondragstart="window.handleDragStart(event)"
+                     onclick="window.viewIntervieweeDetail('${interviewee.id}')"
+                     style="background: ${bgColor}; border: 1px solid ${borderColor}; border-radius: 6px; padding: 10px; margin-bottom: 8px; cursor: move; transition: all 0.2s;">
+                    <div style="font-weight: 600; font-size: 14px; color: #1f2937; margin-bottom: 6px;">${interviewee.name || '이름 없음'}</div>
+                    <div style="font-size: 11px; color: #6b7280; margin-bottom: 3px;">📞 ${interviewee.phone || '-'}</div>
+                    <div style="font-size: 11px; color: #6b7280; margin-bottom: 6px;">💼 ${interviewee.experience || '-'}</div>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="font-size: 10px; color: #9ca3af;">지원: ${interviewee.appliedDate || '-'}</span>
+                        <button onclick="event.stopPropagation(); window.deleteInterview('${interviewee.id}')" 
+                                style="background: none; border: none; color: #ef4444; cursor: pointer; font-size: 16px; padding: 0;">×</button>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // 드래그 앤 드롭 핸들러
+        window.handleDragStart = function(event) {
+            event.dataTransfer.effectAllowed = 'move';
+            event.dataTransfer.setData('text/plain', event.target.dataset.id);
+            event.target.style.opacity = '0.5';
+        }
+        
+        window.handleDragOver = function(event) {
+            event.preventDefault();
+            event.dataTransfer.dropEffect = 'move';
+            event.currentTarget.style.background = '#f0f9ff';
+        }
+        
+        window.handleDrop = async function(event) {
+            event.preventDefault();
+            event.currentTarget.style.background = 'white';
+            
+            const intervieweeId = event.dataTransfer.getData('text/plain');
+            const targetStage = event.currentTarget;
+            const newStatus = targetStage.dataset.stage;
+            const positionId = targetStage.dataset.positionId;
+            
+            try {
+                // Firebase 업데이트
+                await window.setDoc(window.doc(window.db, 'interviews', intervieweeId), {
+                    status: newStatus,
+                    positionId: positionId
+                }, { merge: true });
+                
+                // 칸반 보드 리로드
+                window.loadInterviews();
+                
+                // 대시보드도 업데이트
+                if (document.getElementById('dashboard-tab').style.display !== 'none') {
+                    loadDashboard();
+                }
+                
+            } catch (error) {
+                console.error('단계 변경 오류:', error);
+                alert('단계 변경 오류: ' + error.message);
+            }
+        }
+        
+        // 간단한 면접자 등록 폼
+        window.showAddIntervieweeFormSimple = async function() {
+            showLoading();
+            
+            // 진행중인 포지션 로드
+            const positionsSnap = await window.getDocs(window.collection(window.db, 'recruitmentPositions'));
+            const activePositions = [];
+            positionsSnap.forEach(doc => {
+                const pos = doc.data();
+                if (pos.status === 'active') {
+                    activePositions.push({ id: doc.id, ...pos });
+                }
+            });
+            
+            hideLoading();
+            
+            if (activePositions.length === 0) {
+                alert('진행중인 채용 포지션이 없습니다.\n먼저 채용 포지션을 등록해주세요.');
+                return;
+            }
+            
+            const html = `
+                <div style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 10000;" onclick="this.remove()">
+                    <div style="background: white; padding: 30px; border-radius: 8px; width: 600px; max-height: 90vh; overflow-y: auto;" onclick="event.stopPropagation()">
+                        <h3 style="margin-bottom: 20px;">면접자 등록</h3>
+                        <form id="interviewee-form-simple" onsubmit="return window.saveIntervieweeSimple(event)">
+                            <div style="margin-bottom: 15px;">
+                                <label style="display: block; margin-bottom: 5px; font-weight: 600;">지원 포지션 *</label>
+                                <select name="positionId" required style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                                    <option value="">선택하세요</option>
+                                    ${activePositions.map(pos => `
+                                        <option value="${pos.id}">${pos.jobTitle} (${pos.position}) - ${pos.location}</option>
+                                    `).join('')}
+                                </select>
+                            </div>
+                            
+                            <div style="margin-bottom: 15px;">
+                                <label style="display: block; margin-bottom: 5px; font-weight: 600;">이력서 이미지 붙여넣기</label>
+                                <div id="resume-paste-area" 
+                                     contenteditable="true"
+                                     style="width: 100%; min-height: 100px; padding: 12px; border: 2px dashed #ddd; border-radius: 4px; background: #f9fafb; font-size: 13px; color: #6b7280; cursor: text;"
+                                     onpaste="window.handleImagePaste(event)">
+                                    Ctrl+V로 이력서 이미지를 붙여넣으세요...
+                                </div>
+                                <div id="paste-status" style="margin-top: 8px; font-size: 12px;"></div>
+                                <img id="pasted-image" style="display: none; max-width: 100%; margin-top: 10px; border: 1px solid #ddd; border-radius: 4px;">
+                            </div>
+                            
+                            <div style="margin-bottom: 15px;">
+                                <label style="display: block; margin-bottom: 5px; font-weight: 600;">이름 *</label>
+                                <input type="text" name="name" id="interviewee-name-simple" required style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                            </div>
+                            
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">
+                                <div>
+                                    <label style="display: block; margin-bottom: 5px; font-weight: 600;">연락처</label>
+                                    <input type="tel" name="phone" id="interviewee-phone-simple" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                                </div>
+                                <div>
+                                    <label style="display: block; margin-bottom: 5px; font-weight: 600;">이메일</label>
+                                    <input type="email" name="email" id="interviewee-email-simple" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                                </div>
+                            </div>
+                            
+                            <div style="margin-bottom: 15px;">
+                                <label style="display: block; margin-bottom: 5px; font-weight: 600;">경력</label>
+                                <input type="text" name="experience" id="interviewee-experience-simple" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;" placeholder="예: 신입 / 3년">
+                            </div>
+                            
+                            <div style="margin-bottom: 15px;">
+                                <label style="display: block; margin-bottom: 5px; font-weight: 600;">메모</label>
+                                <textarea name="notes" id="interviewee-notes-simple" rows="3" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;" placeholder="특이사항, 면접 평가 등"></textarea>
+                            </div>
+                            
+                            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                                <button type="button" onclick="this.closest('div[style*=fixed]').remove()" style="padding: 8px 16px; background: #6b7280; color: white; border: none; border-radius: 4px; cursor: pointer;">취소</button>
+                                <button type="submit" style="padding: 8px 16px; background: #3b82f6; color: white; border: none; border-radius: 4px; cursor: pointer;">등록</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            `;
+            
+            document.body.insertAdjacentHTML('beforeend', html);
+        }
+        
+        // 이미지 붙여넣기 핸들러
+        window.handleImagePaste = async function(event) {
+            event.preventDefault();
+            
+            const items = (event.clipboardData || event.originalEvent.clipboardData).items;
+            const statusDiv = document.getElementById('paste-status');
+            const imagePreview = document.getElementById('pasted-image');
+            
+            for (let item of items) {
+                if (item.type.indexOf('image') !== -1) {
+                    const blob = item.getAsFile();
+                    const reader = new FileReader();
+                    
+                    reader.onload = async function(e) {
+                        const base64 = e.target.result.split(',')[1];
+                        
+                        // 이미지 미리보기
+                        imagePreview.src = e.target.result;
+                        imagePreview.style.display = 'block';
+                        
+                        statusDiv.innerHTML = '<span style="color: #3b82f6;">🔍 이미지 분석 중...</span>';
+                        
+                        try {
+                            // Claude API로 이미지 분석
+                            const response = await fetch('https://api.anthropic.com/v1/messages', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'anthropic-version': '2023-06-01'
+                                },
+                                body: JSON.stringify({
+                                    model: 'claude-sonnet-4-20250514',
+                                    max_tokens: 1500,
+                                    messages: [{
+                                        role: 'user',
+                                        content: [
+                                            {
+                                                type: 'image',
+                                                source: {
+                                                    type: 'base64',
+                                                    media_type: 'image/png',
+                                                    data: base64
+                                                }
+                                            },
+                                            {
+                                                type: 'text',
+                                                text: `이 이력서 이미지를 분석하여 다음 정보를 JSON 형식으로 추출해주세요:
+
+{
+  "name": "이름",
+  "phone": "연락처",
+  "email": "이메일",
+  "experience": "경력 (예: 신입, 3년 등)",
+  "notes": "주요 경력 및 특이사항 요약"
+}
+
+추출할 수 없는 정보는 빈 문자열("")로 반환해주세요.
+JSON만 반환하고 다른 설명은 생략해주세요.`
+                                            }
+                                        ]
+                                    }]
+                                })
+                            });
+                            
+                            const data = await response.json();
+                            
+                            if (data.content && data.content[0]) {
+                                let text = data.content[0].text;
+                                text = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+                                
+                                const parsedData = JSON.parse(text);
+                                
+                                // 폼 필드 자동 채우기
+                                if (parsedData.name) document.getElementById('interviewee-name-simple').value = parsedData.name;
+                                if (parsedData.phone) document.getElementById('interviewee-phone-simple').value = parsedData.phone;
+                                if (parsedData.email) document.getElementById('interviewee-email-simple').value = parsedData.email;
+                                if (parsedData.experience) document.getElementById('interviewee-experience-simple').value = parsedData.experience;
+                                if (parsedData.notes) document.getElementById('interviewee-notes-simple').value = parsedData.notes;
+                                
+                                statusDiv.innerHTML = '<span style="color: #10b981;">✅ 이미지 분석 완료 - 정보가 자동으로 입력되었습니다</span>';
+                            } else {
+                                throw new Error('이미지 분석 결과를 받지 못했습니다');
+                            }
+                            
+                        } catch (error) {
+                            console.error('이미지 분석 오류:', error);
+                            statusDiv.innerHTML = '<span style="color: #ef4444;">❌ 이미지 분석 실패 - 수동으로 입력해주세요</span>';
+                        }
+                    };
+                    
+                    reader.readAsDataURL(blob);
+                    break;
+                }
+            }
+        }
+        
+        window.saveIntervieweeSimple = async function(event) {
+            event.preventDefault();
+            
+            const form = event.target;
+            const data = {
+                positionId: form.positionId.value,
+                name: form.name.value,
+                phone: form.phone.value || '',
+                email: form.email.value || '',
+                experience: form.experience.value || '',
+                notes: form.notes.value || '',
+                status: '1차 면접 대상',
+                appliedDate: new Date().toISOString().split('T')[0],
+                createdBy: window.currentUser?.email || 'admin'
+            };
+            
+            try {
+                await window.addDoc(window.collection(window.db, 'interviews'), data);
+                alert('✅ 면접자가 등록되었습니다.');
+                document.querySelector('div[style*="position: fixed"]').remove();
+                window.loadInterviews();
+                
+                // 대시보드도 업데이트
+                if (document.getElementById('dashboard-tab').style.display !== 'none') {
+                    loadDashboard();
+                }
+            } catch (error) {
+                console.error('면접자 등록 오류:', error);
+                alert('❌ 면접자 등록 오류: ' + error.message);
+            }
+            
+            return false;
+        }
+        
+        window.viewIntervieweeDetail = async function(interviewId) {
+            showLoading();
+            
+            try {
+                const interviewDoc = await window.getDoc(window.doc(window.db, 'interviews', interviewId));
+                if (!interviewDoc.exists()) {
+                    alert('면접자 정보를 찾을 수 없습니다.');
+                    return;
+                }
+                
+                const interview = interviewDoc.data();
+                
+                // 포지션 정보 조회
+                let positionName = '-';
+                if (interview.positionId) {
+                    const posDoc = await window.getDoc(window.doc(window.db, 'recruitmentPositions', interview.positionId));
+                    if (posDoc.exists()) {
+                        const pos = posDoc.data();
+                        positionName = `${pos.jobTitle} (${pos.position})`;
+                    }
+                }
+                
+                const html = `
+                    <div style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 10000;" onclick="this.remove()">
+                        <div style="background: white; padding: 30px; border-radius: 8px; width: 600px; max-height: 90vh; overflow-y: auto;" onclick="event.stopPropagation()">
+                            <h3 style="margin-bottom: 20px;">면접자 상세 정보</h3>
+                            
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+                                <div>
+                                    <div style="font-size: 12px; color: #6b7280; margin-bottom: 4px;">지원 포지션</div>
+                                    <div style="font-size: 14px; font-weight: 600;">${positionName}</div>
+                                </div>
+                                <div>
+                                    <div style="font-size: 12px; color: #6b7280; margin-bottom: 4px;">현재 단계</div>
+                                    <div style="font-size: 14px; font-weight: 600;">${interview.status || '1차 면접 대상'}</div>
+                                </div>
+                                <div>
+                                    <div style="font-size: 12px; color: #6b7280; margin-bottom: 4px;">이름</div>
+                                    <div style="font-size: 14px; font-weight: 600;">${interview.name || '-'}</div>
+                                </div>
+                                <div>
+                                    <div style="font-size: 12px; color: #6b7280; margin-bottom: 4px;">연락처</div>
+                                    <div style="font-size: 14px;">${interview.phone || '-'}</div>
+                                </div>
+                                <div>
+                                    <div style="font-size: 12px; color: #6b7280; margin-bottom: 4px;">이메일</div>
+                                    <div style="font-size: 14px;">${interview.email || '-'}</div>
+                                </div>
+                                <div>
+                                    <div style="font-size: 12px; color: #6b7280; margin-bottom: 4px;">경력</div>
+                                    <div style="font-size: 14px;">${interview.experience || '-'}</div>
+                                </div>
+                                <div style="grid-column: 1 / -1;">
+                                    <div style="font-size: 12px; color: #6b7280; margin-bottom: 4px;">지원일</div>
+                                    <div style="font-size: 14px;">${interview.appliedDate || '-'}</div>
+                                </div>
+                            </div>
+                            
+                            <div style="margin-bottom: 20px;">
+                                <div style="font-size: 12px; color: #6b7280; margin-bottom: 8px;">메모</div>
+                                <div style="background: #f9fafb; padding: 15px; border-radius: 4px; white-space: pre-wrap; font-size: 13px; line-height: 1.6;">
+                                    ${interview.notes || '메모 없음'}
+                                </div>
+                            </div>
+                            
+                            <div style="display: flex; justify-content: flex-end;">
+                                <button onclick="this.closest('div[style*=fixed]').remove()" style="padding: 8px 16px; background: #6b7280; color: white; border: none; border-radius: 4px; cursor: pointer;">닫기</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                document.body.insertAdjacentHTML('beforeend', html);
+                
+            } catch (error) {
+                console.error('면접자 상세 조회 오류:', error);
+                alert('면접자 상세 조회 오류: ' + error.message);
+            }
+            
+            hideLoading();
+        }
+        
+        window.deleteInterview = async function(interviewId) {
+            if (!confirm('이 면접자를 삭제하시겠습니까?')) return;
+            
+            try {
+                await window.deleteDoc(window.doc(window.db, 'interviews', interviewId));
+                window.loadInterviews();
+                
+                // 대시보드도 업데이트
+                if (document.getElementById('dashboard-tab').style.display !== 'none') {
+                    loadDashboard();
+                }
+            } catch (error) {
+                console.error('면접자 삭제 오류:', error);
+                alert('❌ 면접자 삭제 오류: ' + error.message);
+            }
+        }
+
+
         // ===== HR 대시보드 =====
         async function loadDashboard() {
             showLoading();
@@ -2423,7 +3156,14 @@
                 
                 // ===== 중단 영역 =====
                 
-                // 채용 진행 현황
+                // 면접 전형 데이터 로드
+                const interviewsSnap = await window.getDocs(window.collection(window.db, 'interviews'));
+                const interviews = [];
+                interviewsSnap.forEach(doc => {
+                    interviews.push({ id: doc.id, ...doc.data() });
+                });
+                
+                // 채용 진행 현황 - 포지션별 면접 현황 표
                 let recruitmentHTML = '';
                 if (activePositions.length === 0) {
                     recruitmentHTML = `
@@ -2433,79 +3173,208 @@
                         </div>
                     `;
                 } else {
-                    recruitmentHTML = '<div style="display: flex; flex-direction: column; gap: 10px;">';
-                    activePositions.slice(0, 5).forEach(pos => {
-                        const companyName = companies[pos.companyCode] || pos.companyCode || '-';
+                    // 표 헤더
+                    recruitmentHTML = `
+                        <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+                            <thead>
+                                <tr style="background: #f9fafb; border-bottom: 2px solid #e5e7eb;">
+                                    <th style="padding: 8px; text-align: left; font-weight: 600; color: #6b7280;">포지션명</th>
+                                    <th style="padding: 8px; text-align: center; font-weight: 600; color: #6b7280;">서류<br/>검토</th>
+                                    <th style="padding: 8px; text-align: center; font-weight: 600; color: #6b7280;">1차 면접<br/>(진행/대기)</th>
+                                    <th style="padding: 8px; text-align: center; font-weight: 600; color: #6b7280;">2차 면접<br/>(진행/대기)</th>
+                                    <th style="padding: 8px; text-align: center; font-weight: 600; color: #6b7280;">최종<br/>합격</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                    `;
+                    
+                    // 각 포지션별 데이터
+                    activePositions.forEach(pos => {
+                        const companyName = companies[pos.companyCode] || '-';
+                        const posInterviews = interviews.filter(i => i.positionId === pos.id);
+                        
+                        // 단계별 집계
+                        const reviewCount = posInterviews.filter(i => !i.status || i.status === '서류 검토').length;
+                        const stage1Count = posInterviews.filter(i => i.status === '1차 면접 대상').length;
+                        const stage2Count = posInterviews.filter(i => i.status === '2차 면접 대상').length;
+                        const passCount = posInterviews.filter(i => i.status === '합격').length;
+                        const totalCount = posInterviews.length;
+                        
                         recruitmentHTML += `
-                            <div style="padding: 10px; background: #f9fafb; border-radius: 6px; border-left: 3px solid #3b82f6;">
-                                <div style="font-size: 13px; font-weight: 600; margin-bottom: 4px; color: #1f2937;">${pos.jobTitle || '직무명 없음'}</div>
-                                <div style="font-size: 11px; color: #6b7280;">
-                                    ${companyName} | ${pos.location || '-'} | ${pos.position || '-'}
-                                </div>
-                                <div style="font-size: 11px; color: #999; margin-top: 4px;">등록일: ${pos.createdAt || '-'}</div>
-                            </div>
+                            <tr style="border-bottom: 1px solid #e5e7eb;">
+                                <td style="padding: 10px;">
+                                    <div style="font-weight: 600; color: #1f2937; margin-bottom: 2px;">${pos.jobTitle}</div>
+                                    <div style="font-size: 10px; color: #9ca3af;">${pos.position} | ${pos.location}</div>
+                                </td>
+                                <td style="padding: 10px; text-align: center; color: #6b7280;">
+                                    <span style="font-weight: 600;">${reviewCount}</span>명
+                                </td>
+                                <td style="padding: 10px; text-align: center; color: #3b82f6;">
+                                    <span style="font-weight: 600;">${stage1Count}</span>명
+                                </td>
+                                <td style="padding: 10px; text-align: center; color: #0891b2;">
+                                    <span style="font-weight: 600;">${stage2Count}</span>명
+                                </td>
+                                <td style="padding: 10px; text-align: center; color: #10b981;">
+                                    <span style="font-weight: 600;">${passCount}</span>명
+                                </td>
+                            </tr>
                         `;
                     });
-                    if (activePositions.length > 5) {
-                        recruitmentHTML += `
-                            <div style="text-align: center; padding: 8px;">
-                                <a href="#" onclick="switchMainTab('recruitment-positions'); return false;" style="font-size: 11px; color: #3b82f6; text-decoration: none;">
-                                    +${activePositions.length - 5}개 더 보기
-                                </a>
-                            </div>
-                        `;
-                    }
-                    recruitmentHTML += '</div>';
+                    
+                    // 합계 행
+                    const totalReview = interviews.filter(i => !i.status || i.status === '서류 검토').length;
+                    const totalStage1 = interviews.filter(i => i.status === '1차 면접 대상').length;
+                    const totalStage2 = interviews.filter(i => i.status === '2차 면접 대상').length;
+                    const totalPass = interviews.filter(i => i.status === '합격').length;
+                    
+                    recruitmentHTML += `
+                                <tr style="background: #f9fafb; font-weight: 600; border-top: 2px solid #e5e7eb;">
+                                    <td style="padding: 10px; color: #1f2937;">전체</td>
+                                    <td style="padding: 10px; text-align: center; color: #6b7280;">${totalReview}명</td>
+                                    <td style="padding: 10px; text-align: center; color: #3b82f6;">${totalStage1}명</td>
+                                    <td style="padding: 10px; text-align: center; color: #0891b2;">${totalStage2}명</td>
+                                    <td style="padding: 10px; text-align: center; color: #10b981;">${totalPass}명</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <div style="text-align: center; padding: 10px; margin-top: 10px;">
+                            <a href="#" onclick="switchMainTab('recruitment-interviews'); return false;" style="font-size: 11px; color: #3b82f6; text-decoration: none;">
+                                전형 관리 →
+                            </a>
+                        </div>
+                    `;
                 }
                 document.getElementById('recruitment-status').innerHTML = recruitmentHTML;
                 
-                // 조직 건강도 & 리스크
-                const avgTenure = calculateAvgTenure(employees, currentDate);
-                const highTurnoverDepts = calculateHighTurnover(employees, depts, currentDate);
+                // 면접 전형 현황 (기존 코드)
+                const stage1Count = interviews.filter(i => !i.status || i.status === '서류 검토' || i.status === '1차 면접 대상').length;
+                const stage2Count = interviews.filter(i => i.status === '2차 면접' || i.status === '2차 면접 대상').length;
+                const passedCount = interviews.filter(i => i.status === '합격').length;
+                const totalCandidates = interviews.length;
                 
-                let healthHTML = '<div style="display: flex; flex-direction: column; gap: 12px;">';
                 
-                // 평균 근속연수
-                healthHTML += `
-                    <div style="display: flex; align-items: center; gap: 8px; padding: 10px; background: #f9fafb; border-radius: 6px;">
-                        <span style="font-size: 16px;">⏱️</span>
-                        <div style="flex: 1;">
-                            <div style="font-size: 11px; color: #6b7280; margin-bottom: 2px;">평균 근속연수</div>
-                            <div style="font-size: 16px; font-weight: 600; color: #1f2937;">${avgTenure}년</div>
-                        </div>
-                    </div>
-                `;
+                // 휴직 임직원 명단
+                const onLeaveEmployees = employees.filter(emp => emp.workStatus === '휴직');
                 
-                // 이직 위험 부서
-                if (highTurnoverDepts.length > 0) {
-                    healthHTML += `
-                        <div style="display: flex; align-items: start; gap: 8px; padding: 10px; background: #fef2f2; border-radius: 6px; border-left: 3px solid #dc2626;">
-                            <span style="font-size: 16px;">⚠️</span>
-                            <div style="flex: 1;">
-                                <div style="font-size: 11px; color: #991b1b; margin-bottom: 4px; font-weight: 600;">이직 위험 부서</div>
-                                <div style="font-size: 11px; color: #6b7280;">${highTurnoverDepts.join(', ')}</div>
-                            </div>
+                let activitiesHTML = '<div style="display: flex; flex-direction: column; gap: 8px; max-height: 300px; overflow-y: auto;">';
+                
+                if (onLeaveEmployees.length === 0) {
+                    activitiesHTML = `
+                        <div style="text-align: center; padding: 30px; color: #9ca3af;">
+                            <div style="font-size: 32px; margin-bottom: 8px;">✅</div>
+                            <div style="font-size: 12px;">현재 휴직 중인 직원이 없습니다</div>
                         </div>
                     `;
                 } else {
+                    onLeaveEmployees.forEach(emp => {
+                        const deptName = depts[emp.departmentCode] || '미지정';
+                        const leaveStart = emp.leaveStartDate || '미정';
+                        const leaveEnd = emp.leaveEndDate || '미정';
+                        const leaveType = emp.leaveType || '휴직';
+                        
+                        // 휴직 종류에 따른 아이콘과 색상
+                        let icon = '🏖️';
+                        let bgColor = '#eff6ff';
+                        let borderColor = '#3b82f6';
+                        
+                        if (leaveType.includes('육아')) {
+                            icon = '👶';
+                            bgColor = '#fef3c7';
+                            borderColor = '#f59e0b';
+                        } else if (leaveType.includes('병가') || leaveType.includes('질병')) {
+                            icon = '🏥';
+                            bgColor = '#fee2e2';
+                            borderColor = '#ef4444';
+                        } else if (leaveType.includes('출산')) {
+                            icon = '🤱';
+                            bgColor = '#fce7f3';
+                            borderColor = '#ec4899';
+                        }
+                        
+                        activitiesHTML += `
+                            <div style="display: flex; align-items: start; gap: 8px; padding: 10px; background: ${bgColor}; border-radius: 6px; border-left: 3px solid ${borderColor};">
+                                <span style="font-size: 16px;">${icon}</span>
+                                <div style="flex: 1;">
+                                    <div style="font-size: 12px; font-weight: 600; color: #1f2937;">${emp.name} (${deptName})</div>
+                                    <div style="font-size: 11px; color: #6b7280; margin-top: 2px;">
+                                        ${leaveType} • ${leaveStart} ~ ${leaveEnd}
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    });
+                }
+                
+                activitiesHTML += '</div>';
+                
+                const activitiesSection = document.getElementById('recent-activities');
+                if (activitiesSection) {
+                    activitiesSection.innerHTML = activitiesHTML;
+                }
+                
+                // 계약만료 도래 임직원
+                // 계약직 중 계약 종료일이 3개월 이내인 직원
+                const threeMonthsLater = new Date(currentDate);
+                threeMonthsLater.setMonth(threeMonthsLater.getMonth() + 3);
+                
+                const expiringContracts = employees.filter(emp => {
+                    if (emp.employmentType !== '계약직') return false;
+                    if (!emp.contractEndDate) return false;
+                    
+                    const endDate = new Date(emp.contractEndDate);
+                    return endDate >= currentDate && endDate <= threeMonthsLater;
+                }).sort((a, b) => {
+                    const dateA = new Date(a.contractEndDate);
+                    const dateB = new Date(b.contractEndDate);
+                    return dateA - dateB;
+                });
+                
+                let healthHTML = '<div style="display: flex; flex-direction: column; gap: 8px;">';
+                
+                if (expiringContracts.length === 0) {
                     healthHTML += `
-                        <div style="display: flex; align-items: center; gap: 8px; padding: 10px; background: #f0fdf4; border-radius: 6px;">
-                            <span style="font-size: 16px;">✅</span>
-                            <div style="font-size: 11px; color: #166534;">조직 건강도 양호</div>
+                        <div style="text-align: center; padding: 30px; color: #9ca3af;">
+                            <div style="font-size: 32px; margin-bottom: 8px;">✅</div>
+                            <div style="font-size: 12px;">3개월 이내 계약만료 예정 직원이 없습니다</div>
                         </div>
                     `;
+                } else {
+                    expiringContracts.forEach(emp => {
+                        const endDate = new Date(emp.contractEndDate);
+                        const daysLeft = Math.ceil((endDate - currentDate) / (1000 * 60 * 60 * 24));
+                        const deptName = depts[emp.departmentCode] || '미지정';
+                        
+                        let bgColor = '#fef2f2'; // 빨강 (30일 이내)
+                        let borderColor = '#dc2626';
+                        let icon = '🔴';
+                        
+                        if (daysLeft > 60) {
+                            bgColor = '#fefce8'; // 노랑 (60일 이상)
+                            borderColor = '#eab308';
+                            icon = '🟡';
+                        } else if (daysLeft > 30) {
+                            bgColor = '#fff7ed'; // 주황 (30-60일)
+                            borderColor = '#f97316';
+                            icon = '🟠';
+                        }
+                        
+                        healthHTML += `
+                            <div style="display: flex; align-items: center; gap: 8px; padding: 10px; background: ${bgColor}; border-radius: 6px; border-left: 3px solid ${borderColor};">
+                                <span style="font-size: 14px;">${icon}</span>
+                                <div style="flex: 1;">
+                                    <div style="font-size: 12px; font-weight: 600; color: #1f2937;">${emp.name} (${deptName})</div>
+                                    <div style="font-size: 11px; color: #6b7280; margin-top: 2px;">
+                                        ${emp.contractEndDate} 만료 • D-${daysLeft}
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    });
                 }
                 
                 healthHTML += '</div>';
                 document.getElementById('org-health').innerHTML = healthHTML;
-                
-                // 목표 달성률
-                document.getElementById('goal-achievement').innerHTML = `
-                    <div style="color: #6b7280; text-align: center; padding: 40px 20px;">
-                        <div style="font-size: 32px; margin-bottom: 10px;">🎯</div>
-                        <div style="font-size: 13px;">목표 데이터 준비 중</div>
-                    </div>
-                `;
                 
                 // ===== 하단 차트 =====
                 
@@ -2835,12 +3704,13 @@
                 employees = employees.filter(e => e.jobTitle === jobTitleFilter);
             }
             
-            // 정렬 기준 적용
+            // 정렬 기준 로드
             const settingsDoc = await window.getDoc(window.doc(window.db, 'settings', 'master'));
             let settings = {
                 positions: [],
                 jobTitles: [],
                 jobRoles: [],
+                locations: [],
                 rosterSort: { sort1: 'name', sort2: '', sort3: '' }
             };
             
@@ -2848,19 +3718,99 @@
                 settings = { ...settings, ...settingsDoc.data() };
             }
             
-            // 임원/자문/고문 우선 정렬
-            const vipPositions = ['임원', '자문', '고문'];
+            // 임원·자문/고문과 일반 직원 분리
+            const executiveRoles = ['회장', '대표이사', '부사장', '전무', '상무', '이사', '감사'];
+            const advisoryRoles = ['자문', '고문'];
+            const executiveDepts = ['임원'];  // 임원 부서
+            const advisoryDepts = ['자문', '고문'];  // 자문/고문 부서
             
-            // 3단계 정렬
-            employees.sort((a, b) => {
-                // 1. 임원/자문/고문 우선
-                const aIsVip = vipPositions.includes(a.position);
-                const bIsVip = vipPositions.includes(b.position);
+            const executives = employees.filter(emp => {
+                // 임원: 부서가 "임원" 또는 직책이 임원 직책
+                const deptName = depts[emp.departmentCode] || '';
+                return executiveDepts.includes(deptName) || executiveRoles.includes(emp.jobRole);
+            });
+            
+            const advisors = employees.filter(emp => {
+                // 자문/고문: 부서가 "자문"/"고문" 또는 직책이 자문/고문
+                const deptName = depts[emp.departmentCode] || '';
+                const isAdvisoryDept = advisoryDepts.includes(deptName);
+                const isAdvisoryRole = advisoryRoles.includes(emp.jobRole);
+                const isNotExecutive = !executiveDepts.includes(deptName) && !executiveRoles.includes(emp.jobRole);
                 
-                if (aIsVip && !bIsVip) return -1;
-                if (!aIsVip && bIsVip) return 1;
+                return (isAdvisoryDept || isAdvisoryRole) && isNotExecutive;
+            });
+            
+            const regularEmployees = employees.filter(emp => {
+                // 일반 직원: 임원도 아니고 자문/고문도 아님
+                const deptName = depts[emp.departmentCode] || '';
+                const isNotExecutive = !executiveDepts.includes(deptName) && !executiveRoles.includes(emp.jobRole);
+                const isNotAdvisory = !advisoryDepts.includes(deptName) && !advisoryRoles.includes(emp.jobRole);
                 
-                // 2. 정렬 기준 적용
+                return isNotExecutive && isNotAdvisory;
+            });
+            
+            // 임원 정렬: 2단계 정렬 적용
+            const execSortKeys = [
+                settings.execSort?.sort1 || 'jobRole',
+                settings.execSort?.sort2 || ''
+            ];
+            
+            // 정렬 함수
+            const sortByKey = (a, b, sortKey) => {
+                if (!sortKey) return 0;
+                
+                if (sortKey === 'jobRole') {
+                    // 직책순
+                    const order = settings.jobRoles || executiveRoles;
+                    const aHasRole = a.jobRole && order.includes(a.jobRole);
+                    const bHasRole = b.jobRole && order.includes(b.jobRole);
+                    
+                    if (aHasRole && bHasRole) {
+                        return order.indexOf(a.jobRole) - order.indexOf(b.jobRole);
+                    }
+                    if (!aHasRole && !bHasRole) return 0;
+                    return aHasRole ? -1 : 1;
+                } else if (sortKey === 'jobTitle') {
+                    // 직위순
+                    const order = settings.jobTitles || [];
+                    const idxA = order.indexOf(a.jobTitle || '');
+                    const idxB = order.indexOf(b.jobTitle || '');
+                    if (idxA === -1 && idxB === -1) return 0;
+                    if (idxA === -1) return 1;
+                    if (idxB === -1) return -1;
+                    return idxA - idxB;
+                } else if (sortKey === 'department') {
+                    // 부서순
+                    return (depts[a.departmentCode] || '').localeCompare(depts[b.departmentCode] || '');
+                } else if (sortKey === 'name') {
+                    // 이름순
+                    return (a.name || '').localeCompare(b.name || '');
+                } else if (sortKey === 'hireDate') {
+                    // 입사일순
+                    return (a.hireDate || '').localeCompare(b.hireDate || '');
+                }
+                return 0;
+            };
+            
+            executives.sort((a, b) => {
+                for (const sortKey of execSortKeys) {
+                    const result = sortByKey(a, b, sortKey);
+                    if (result !== 0) return result;
+                }
+                return 0;
+            });
+            
+            // 자문/고문 정렬: 임원과 동일한 기준 적용
+            advisors.sort((a, b) => {
+                for (const sortKey of execSortKeys) {
+                    const result = sortByKey(a, b, sortKey);
+                    if (result !== 0) return result;
+                }
+                return 0;
+            });
+            
+            // 일반 직원 정렬: 사용자 설정 순서 (근무지 > 부서 > 직위)
+            regularEmployees.sort((a, b) => {
                 const sortKeys = [
                     settings.rosterSort?.sort1 || 'name',
                     settings.rosterSort?.sort2 || '',
@@ -2903,7 +3853,6 @@
                     } else if (sortKey === 'department') {
                         result = (depts[a.departmentCode] || '').localeCompare(depts[b.departmentCode] || '');
                     } else if (sortKey === 'location') {
-                        // 시스템 관리자에서 설정한 근무지 순서대로 정렬
                         const order = settings.locations || [];
                         const idxA = order.indexOf(a.workLocation || '');
                         const idxB = order.indexOf(b.workLocation || '');
@@ -2919,52 +3868,134 @@
                 return 0;
             });
             
+            // 렌더링 함수
+            const renderEmployeeRow = (emp, index, isFirstOfGroup, rowspan) => {
+                // 나이 계산
+                const age = emp.birthDate ? new Date().getFullYear() - new Date(emp.birthDate).getFullYear() : '-';
+                
+                // 근속기간 계산
+                let tenure = '-';
+                if (emp.hireDate) {
+                    const hireDate = new Date(emp.hireDate);
+                    const today = new Date();
+                    const years = today.getFullYear() - hireDate.getFullYear();
+                    const months = today.getMonth() - hireDate.getMonth();
+                    tenure = `${years}년 ${months}개월`;
+                }
+                
+                // 연봉 포맷팅
+                const salary = emp.annualSalary ? Number(emp.annualSalary).toLocaleString() : '-';
+                
+                // 동일인의 첫 번째 행만 번호 표시 (rowspan 적용)
+                const noCell = isFirstOfGroup 
+                    ? `<td rowspan="${rowspan}" style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; text-align: center; white-space: nowrap; vertical-align: middle; background: #f9fafb;">${index}</td>`
+                    : '';
+                
+                return `
+                <tr style="border-bottom: 1px solid #eee;">
+                    ${noCell}
+                    <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">${emp.workLocation || '-'}</td>
+                    <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">${depts[emp.departmentCode] || '-'}</td>
+                    <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; font-weight: bold; white-space: nowrap;">${emp.name || '-'}</td>
+                    <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">${emp.jobTitle || '-'}</td>
+                    <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">${emp.position || '-'}</td>
+                    <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">${emp.jobRole || '-'}</td>
+                    <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">${companies[emp.companyCode] || '-'}</td>
+                    <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">${emp.residentNumber || '-'}</td>
+                    <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">${emp.birthDate || '-'}</td>
+                    <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; text-align: center; white-space: nowrap;">${age}</td>
+                    <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; text-align: center; white-space: nowrap;">${emp.gender || '-'}</td>
+                    <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">${emp.hireDate || '-'}</td>
+                    <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">${tenure}</td>
+                    <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; text-align: right; white-space: nowrap;">${salary}</td>
+                    <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">${emp.education || '-'}</td>
+                    <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">${emp.mobile || '-'}</td>
+                    <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">${emp.companyEmail || emp.personalEmail || '-'}</td>
+                    <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">${emp.address || '-'}</td>
+                </tr>
+                `;
+            };
+            
+            // 동일인 그룹핑 함수
+            const groupByPerson = (empList) => {
+                const groups = [];
+                const processedKeys = new Set();
+                
+                empList.forEach(emp => {
+                    const key = `${emp.name}_${emp.residentNumber}`;
+                    if (processedKeys.has(key)) return;
+                    
+                    // 같은 이름 + 주민번호를 가진 모든 직원 찾기
+                    const samePersons = empList.filter(e => 
+                        e.name === emp.name && e.residentNumber === emp.residentNumber
+                    );
+                    
+                    groups.push(samePersons);
+                    processedKeys.add(key);
+                });
+                
+                return groups;
+            };
+            
             // 테이블 렌더링
             const tbody = document.getElementById('roster-tbody');
             if (employees.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="19" style="padding: 40px; text-align: center; color: #999;">데이터가 없습니다</td></tr>';
             } else {
-                tbody.innerHTML = employees.map((emp, index) => {
-                    // 나이 계산
-                    const age = emp.birthDate ? new Date().getFullYear() - new Date(emp.birthDate).getFullYear() : '-';
-                    
-                    // 근속기간 계산
-                    let tenure = '-';
-                    if (emp.hireDate) {
-                        const hireDate = new Date(emp.hireDate);
-                        const today = new Date();
-                        const years = today.getFullYear() - hireDate.getFullYear();
-                        const months = today.getMonth() - hireDate.getMonth();
-                        tenure = `${years}년 ${months}개월`;
-                    }
-                    
-                    // 연봉 포맷팅 (천 단위 콤마)
-                    const salary = emp.annualSalary ? Number(emp.annualSalary).toLocaleString() : '-';
-                    
-                    return `
-                    <tr style="border-bottom: 1px solid #eee;">
-                        <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; text-align: center; white-space: nowrap;">${index + 1}</td>
-                        <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">${emp.workLocation || '-'}</td>
-                        <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">${depts[emp.departmentCode] || '-'}</td>
-                        <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; font-weight: bold; white-space: nowrap;">${emp.name || '-'}</td>
-                        <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">${emp.jobTitle || '-'}</td>
-                        <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">${emp.position || '-'}</td>
-                        <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">${emp.jobRole || '-'}</td>
-                        <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">${companies[emp.companyCode] || '-'}</td>
-                        <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">${emp.residentNumber || '-'}</td>
-                        <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">${emp.birthDate || '-'}</td>
-                        <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; text-align: center; white-space: nowrap;">${age}</td>
-                        <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; text-align: center; white-space: nowrap;">${emp.gender || '-'}</td>
-                        <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">${emp.hireDate || '-'}</td>
-                        <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">${tenure}</td>
-                        <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; text-align: right; white-space: nowrap;">${salary}</td>
-                        <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">${emp.education || '-'}</td>
-                        <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">${emp.mobile || '-'}</td>
-                        <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">${emp.companyEmail || emp.personalEmail || '-'}</td>
-                        <td style="padding: 4px 6px; border: 1px solid #ddd; font-size: 11px; white-space: nowrap;">${emp.address || '-'}</td>
+                let html = '';
+                let rowIndex = 1;
+                
+                // 임원 및 자문/고문 섹션
+                const managementTotal = executives.length + advisors.length;
+                if (managementTotal > 0) {
+                    html += `
+                    <tr style="background: #f0f7ff; border: 2px solid #2196F3;">
+                        <td colspan="19" style="padding: 12px; font-weight: bold; font-size: 13px; color: #1976d2;">
+                            📊 임원 및 자문/고문 (${managementTotal}명)
+                        </td>
                     </tr>
-                `;
-                }).join('');
+                    `;
+                    
+                    // 임원 그룹핑
+                    const execGroups = groupByPerson(executives);
+                    execGroups.forEach(group => {
+                        group.forEach((emp, idx) => {
+                            html += renderEmployeeRow(emp, rowIndex, idx === 0, group.length);
+                        });
+                        rowIndex++;
+                    });
+                    
+                    // 자문/고문 그룹핑
+                    const advisorGroups = groupByPerson(advisors);
+                    advisorGroups.forEach(group => {
+                        group.forEach((emp, idx) => {
+                            html += renderEmployeeRow(emp, rowIndex, idx === 0, group.length);
+                        });
+                        rowIndex++;
+                    });
+                }
+                
+                // 직원 섹션
+                if (regularEmployees.length > 0) {
+                    html += `
+                    <tr style="background: #f5f5f5; border: 2px solid #757575;">
+                        <td colspan="19" style="padding: 12px; font-weight: bold; font-size: 13px; color: #424242;">
+                            👥 직원 (${regularEmployees.length}명)
+                        </td>
+                    </tr>
+                    `;
+                    
+                    // 직원 그룹핑
+                    const empGroups = groupByPerson(regularEmployees);
+                    empGroups.forEach(group => {
+                        group.forEach((emp, idx) => {
+                            html += renderEmployeeRow(emp, rowIndex, idx === 0, group.length);
+                        });
+                        rowIndex++;
+                    });
+                }
+                
+                tbody.innerHTML = html;
             }
             
             hideLoading();
@@ -3679,27 +4710,6 @@
                 `).join('');
             }
             
-            // 부서 목록 로드
-            const deptsSnap = await window.getDocs(window.collection(window.db, 'departments'));
-            const depts = [];
-            deptsSnap.forEach(doc => depts.push({id: doc.id, ...doc.data()}));
-            
-            const deptTbody = document.getElementById('dept-list');
-            if (depts.length === 0) {
-                deptTbody.innerHTML = '<tr><td colspan="3" style="padding: 20px; text-align: center; color: #999;">등록된 부서가 없습니다</td></tr>';
-            } else {
-                deptTbody.innerHTML = depts.map(d => `
-                    <tr>
-                        <td style="padding: 12px; border: 1px solid #ddd;">${d.name}</td>
-                        <td style="padding: 12px; border: 1px solid #ddd;">${d.location || '-'}</td>
-                        <td style="padding: 12px; border: 1px solid #ddd;">
-                            <button class="btn btn-outline" onclick="editDept('${d.id}')" style="padding: 6px 12px; margin-right: 5px;">수정</button>
-                            <button class="btn btn-secondary" onclick="deleteDept('${d.id}')" style="padding: 6px 12px;">삭제</button>
-                        </td>
-                    </tr>
-                `).join('');
-            }
-            
             hideLoading();
         }
 
@@ -3769,47 +4779,17 @@
             const name = prompt('부서명을 입력하세요:', '');
             if (!name) return;
             
-            const location = prompt('근무지를 입력하세요 (예: 본사, 서울, 골드CC 등):', '');
-            if (!location) return;
-            
             const code = 'D' + Date.now().toString().slice(-6); // 타임스탬프로 고유 코드 생성
             
             showLoading();
             window.setDoc(window.doc(window.db, 'departments', code), {
                 code: code,
                 name: name,
-                location: location,
                 companyCode: 'C001' // 기본값으로 GA KOREA 설정
             }).then(() => {
                 alert('부서가 추가되었습니다.');
-                loadCompanyManagement();
-            }).catch(error => {
-                alert('오류: ' + error.message);
+                loadDeptList();
                 hideLoading();
-            });
-        }
-
-        window.editDept = async function(code) {
-            const docRef = window.doc(window.db, 'departments', code);
-            const docSnap = await window.getDoc(docRef);
-            if (!docSnap.exists()) return;
-            
-            const dept = docSnap.data();
-            const name = prompt('부서명:', dept.name);
-            if (!name) return;
-            
-            const location = prompt('근무지 (예: 본사, 서울, 골드CC 등):', dept.location || '');
-            if (!location) return;
-            
-            showLoading();
-            window.setDoc(docRef, {
-                code: code,
-                name: name,
-                location: location,
-                companyCode: dept.companyCode || 'C001' // 기존 값 유지
-            }).then(() => {
-                alert('수정되었습니다.');
-                loadCompanyManagement();
             }).catch(error => {
                 alert('오류: ' + error.message);
                 hideLoading();
@@ -3820,9 +4800,15 @@
             if (!confirm('이 부서를 삭제하시겠습니까?')) return;
             
             showLoading();
-            await window.deleteDoc(window.doc(window.db, 'departments', code));
-            alert('삭제되었습니다.');
-            loadCompanyManagement();
+            try {
+                await window.deleteDoc(window.doc(window.db, 'departments', code));
+                alert('삭제되었습니다.');
+                await loadDeptList();
+            } catch (error) {
+                console.error('부서 삭제 오류:', error);
+                alert('삭제 중 오류가 발생했습니다: ' + error.message);
+            }
+            hideLoading();
         }
 
         // ===== 시스템 관리자 관리 =====
@@ -3832,6 +4818,9 @@
             // 설정값 로드
             await loadSettings();
             
+            // 부서 목록 로드
+            await loadDeptList();
+            
             // 정렬 기준 로드
             const settingsDoc = await window.getDoc(window.doc(window.db, 'settings', 'master'));
             if (settingsDoc.exists()) {
@@ -3840,6 +4829,11 @@
                     document.getElementById('roster-sort-1').value = settings.rosterSort.sort1 || '';
                     document.getElementById('roster-sort-2').value = settings.rosterSort.sort2 || '';
                     document.getElementById('roster-sort-3').value = settings.rosterSort.sort3 || '';
+                }
+                // 임원 정렬 기준 로드
+                if (settings.execSort) {
+                    document.getElementById('exec-sort-1').value = settings.execSort.sort1 || 'jobRole';
+                    document.getElementById('exec-sort-2').value = settings.execSort.sort2 || '';
                 }
             }
             
@@ -3868,6 +4862,25 @@
             `).join('');
             
             hideLoading();
+        }
+
+        // 부서 목록 로드 함수
+        async function loadDeptList() {
+            const deptsSnap = await window.getDocs(window.collection(window.db, 'departments'));
+            const depts = [];
+            deptsSnap.forEach(doc => depts.push({id: doc.id, ...doc.data()}));
+            
+            const deptBox = document.getElementById('dept-list-box');
+            if (depts.length === 0) {
+                deptBox.innerHTML = '<div style="text-align: center; color: #999; padding: 20px; font-size: 11px;">등록된 부서가 없습니다</div>';
+            } else {
+                deptBox.innerHTML = depts.map(d => `
+                    <div style="display: flex; justify-content: space-between; padding: 8px; border-bottom: 1px solid #f0f0f0;">
+                        <span>${d.name}</span>
+                        <button onclick="window.deleteDept('${d.id}')" style="background: none; border: none; cursor: pointer; color: #f44336; padding: 2px 6px;">✕</button>
+                    </div>
+                `).join('');
+            }
         }
 
         // ===== 설정값 관리 =====
@@ -4033,6 +5046,8 @@
             const sort1 = document.getElementById('roster-sort-1').value;
             const sort2 = document.getElementById('roster-sort-2').value;
             const sort3 = document.getElementById('roster-sort-3').value;
+            const execSort1 = document.getElementById('exec-sort-1').value;
+            const execSort2 = document.getElementById('exec-sort-2').value;
             
             showLoading();
             
@@ -4044,6 +5059,10 @@
                 sort2: sort2,
                 sort3: sort3
             };
+            settings.execSort = {
+                sort1: execSort1,
+                sort2: execSort2
+            };
             
             await window.setDoc(window.doc(window.db, 'settings', 'master'), settings);
             
@@ -4052,10 +5071,15 @@
         }
 
         window.showAddAdminForm = function() {
-            const username = prompt('새 관리자 아이디를 입력하세요:', '');
-            if (!username) return;
+            const email = prompt('새 사용자 이메일을 입력하세요 (예: user@gakorea.com):', '');
+            if (!email) return;
             
-            const name = prompt('관리자 이름을 입력하세요:', '');
+            if (!email.includes('@')) {
+                alert('올바른 이메일 형식이 아닙니다.');
+                return;
+            }
+            
+            const name = prompt('사용자 이름을 입력하세요:', '');
             if (!name) return;
             
             const password = prompt('비밀번호를 입력하세요 (8자 이상 권장):', '');
@@ -4066,18 +5090,24 @@
                 return;
             }
             
-            const roleChoice = confirm('시스템 관리자 권한을 부여하시겠습니까?\n\n확인: 시스템 관리자\n취소: 일반 관리자');
-            const role = roleChoice ? 'admin' : 'user';
+            const roleChoice = confirm('관리자 권한을 부여하시겠습니까?\n\n확인: 관리자 (수정 가능)\n취소: 읽기 전용 (조회만 가능)');
+            const role = roleChoice ? 'admin' : 'viewer';
             
             showLoading();
-            window.setDoc(window.doc(window.db, 'users', username), {
-                username: username,
-                password: hashPassword(password),
+            
+            // ⚠️ 주의: Firebase Auth에서 사용자 생성은 Admin SDK 또는 Firebase Console에서 해야 합니다.
+            // 여기서는 users 컬렉션에 정보만 저장합니다.
+            // 실제로는 Firebase Console에서 사용자를 먼저 생성해야 합니다.
+            
+            window.setDoc(window.doc(window.db, 'users', email), {
+                email: email,
                 name: name,
                 role: role,
+                createdAt: new Date().toISOString(),
                 active: true
             }).then(() => {
-                alert('관리자가 추가되었습니다.');
+                hideLoading();
+                alert(`✅ 사용자가 등록되었습니다.\n\n⚠️ 중요: Firebase Console에서 다음 작업을 해주세요:\n1. Authentication > Users 메뉴로 이동\n2. "Add user" 클릭\n3. 이메일: ${email}\n4. 비밀번호: ${password}\n\n사용자 권한: ${role === 'admin' ? '관리자 (수정 가능)' : '읽기 전용 (조회만 가능)'}`);
                 loadAdminManagement();
             }).catch(error => {
                 alert('오류: ' + error.message);
